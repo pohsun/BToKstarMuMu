@@ -5321,6 +5321,7 @@ void getToyFromUnfilterGen(int iBin) // For validation, DEPRECATED.
     double CosThetaL = 0;
     double Mumumass = 0;
     double Mumumasserr = 0;
+    int    Triggers = 0;
 
     //TChain *treein=new TChain("tree");
     //treein->Add("./data/2012/sel_BuToKstarMuMu_NoGenFilter_8TeV_part*_mc.lite.root");//Contact po-hsun.chen@cern.ch to get these files.
@@ -5337,7 +5338,8 @@ void getToyFromUnfilterGen(int iBin) // For validation, DEPRECATED.
     treein->SetBranchAddress("CosThetaL"    , &CosThetaL);
     treein->SetBranchAddress("Mumumass"     , &Mumumass);
     treein->SetBranchAddress("Mumumasserr"  , &Mumumasserr);
-    
+    treein->SetBranchAddress("Triggers"     , &Triggers);
+
     // Get efficiency map, y=cosThetaK, x=cosThetaL
     std::string f2_model_format;
     if (flatModel){
@@ -5379,6 +5381,7 @@ void getToyFromUnfilterGen(int iBin) // For validation, DEPRECATED.
                 CosThetaK   = gCosThetaK;
                 Mumumass    = sqrt(gQ2);
                 Mumumasserr = 0.001;
+                Triggers    = 1;
                 treeout->Fill();
                 _count++;
             }
@@ -5470,6 +5473,7 @@ void genToySignal(int iBin, int nEvents = 100, double newAfb = -1., double newFl
     double Q2((q2rangeup[iBin]+q2rangedn[iBin])/2);
     double mumuMass(sqrt(Q2));
     double mumuMasserr(0.01);
+    int    Triggers(1);
 
     TFile fout(TString::Format("%s/signalToy_Bin%d.root",owspacepath.Data(),iBin), "RECREATE");
     TTree *tree = new TTree("tree","tree");
@@ -5479,6 +5483,7 @@ void genToySignal(int iBin, int nEvents = 100, double newAfb = -1., double newFl
     tree->Branch("Mumumass",&mumuMass,"Mumumass/D");
     tree->Branch("Mumumasserr",&mumuMasserr,"Mumumasserr/D");
     tree->Branch("Q2",&Q2,"Q2/D");
+    tree->Branch("Triggers",&Triggers,"Triggers/I");
     TH1D *h_Afb     =new TH1D("h_Afb","",100,-1,1);
     TH1D *h_Fl      =new TH1D("h_Fl","",100,0,1);
     TH2D *h2_AfbFl  =new TH2D("h2_AfbFl","",100,-1,1,100,0,1);
@@ -5588,6 +5593,7 @@ void genToyCombBkg(int iBin, int nEvents = 0, const char outfile[] = "combBkgToy
     double Q2((q2rangeup[iBin]+q2rangedn[iBin])/2);
     double mumuMass(sqrt(Q2));
     double mumuMasserr(0.01);
+    int    Triggers(1);
     
     TFile fout(TString::Format("%s/%s_Bin%d.root",owspacepath.Data(),outfile,iBin), "RECREATE");
     TTree *tree = new TTree("tree","tree");
@@ -5597,6 +5603,7 @@ void genToyCombBkg(int iBin, int nEvents = 0, const char outfile[] = "combBkgToy
     tree->Branch("Mumumass",&mumuMass,"Mumumass/D");
     tree->Branch("Mumumasserr",&mumuMasserr,"Mumumasserr/D");
     tree->Branch("Q2",&Q2,"Q2/D");
+    tree->Branch("Triggers",&Triggers,"Triggers/I");
 
     RooDataSet *outdata = f.generate(RooArgSet(*Bmass,*CosThetaK,*CosThetaL),nEvents);
     const RooArgSet *dataInEntry = 0;
@@ -5642,6 +5649,7 @@ void genToyPeakBkg(int iBin, int nEventsL = 0, int nEventsR = 0) // For vaidatio
     double Q2((q2rangeup[iBin]+q2rangedn[iBin])/2);
     double mumuMass(sqrt(Q2));
     double mumuMasserr(0.01);
+    int    Triggers(1);
     
     TFile fout(TString::Format("%s/peakBkgToy_Bin%d.root",owspacepath.Data(),iBin), "RECREATE");
     TTree *tree = new TTree("tree","tree");
@@ -5651,6 +5659,7 @@ void genToyPeakBkg(int iBin, int nEventsL = 0, int nEventsR = 0) // For vaidatio
     tree->Branch("Mumumass",&mumuMass,"Mumumass/D");
     tree->Branch("Mumumasserr",&mumuMasserr,"Mumumasserr/D");
     tree->Branch("Q2",&Q2,"Q2/D");
+    tree->Branch("Triggers",&Triggers,"Triggers/I");
 
     // LSB
     for (int iEvt = 0; iEvt < nEventsL; iEvt++) {
@@ -5719,6 +5728,7 @@ void genToyPeakBkgFromWspace(int iBin, double nEvents, char decmode[]="both") //
         double Q2((q2rangeup[iBin]+q2rangedn[iBin])/2);
         double mumuMass(sqrt(Q2));
         double mumuMasserr(0.01);
+        int    Triggers(1);
 
         TFile fout(TString::Format("%s/%sPeakToy_Bin%d.root",owspacepath.Data(),peakBkgType[iType],iBin), "RECREATE");
         TTree *tree = new TTree("tree","tree");
@@ -5728,6 +5738,7 @@ void genToyPeakBkgFromWspace(int iBin, double nEvents, char decmode[]="both") //
         tree->Branch("Mumumass",&mumuMass,"Mumumass/D");
         tree->Branch("Mumumasserr",&mumuMasserr,"Mumumasserr/D");
         tree->Branch("Q2",&Q2,"Q2/D");
+        tree->Branch("Triggers",&Triggers,"Triggers/I");
 
         RooDataSet *outdata = f.generate(RooArgSet(*Bmass,*CosThetaK,*CosThetaL),nEventsRound);
         const RooArgSet *dataInEntry = 0;
