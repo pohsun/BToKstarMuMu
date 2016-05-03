@@ -119,6 +119,7 @@ char q2rangeLatex[11][32] = {   " 1.00 < q^{2} < 2.00",
                                 " 1.00 < q^{2} < 6.00"};
 double q2rangedn[11] = {1.00 , 2.00 , 4.30 , 8.68  , 10.09 , 12.86 , 14.18 , 16.00 , 1.00 ,  1.00 , 1.00};
 double q2rangeup[11] = {2.00 , 4.30 , 8.68 , 10.09 , 12.86 , 14.18 , 16.00 , 19.00 , 4.30 , 19.00 , 6.00};
+char nTriggeredPath[3][32] = {"Triggers == 0", "Triggers == 1", "Triggers >= 1"};
 char mumuMassWindow[7][512] = { "Mumumass > 0",
                                 "(Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)",
                                 "(Mumumass < 3.096916+3*Mumumasserr && Mumumass > 3.096916-5*Mumumasserr) || (Mumumass < 3.686109+3*Mumumasserr && Mumumass > 3.686109-3*Mumumasserr)",
@@ -136,15 +137,15 @@ double genAfberr[9]={0.000434,0.000285,0.000223,0.000383,0.000277,0.000421,0.000
 double genFl [9]={0.705,0.791,0.649,0.524,0.454,0.399,0.369,0.341, 0.7620};
 double genFlerr[9]={0.000568,0.000409,0.000271,0.000420,0.000287,0.000415,0.000369,0.000361, 0.000240};
 std::string f_accXrecoEff_ord0[9] = { // default values
-    "11627.982364*((1.195422e-04*exp(-0.5*((CosThetaL-(-1.727343e-01))/2.021796e-01)**2)+1.156964e-04*exp(-0.5*((CosThetaL-(2.507083e-01))/2.478225e-01)**2)+4.629809e-05*exp(-0.5*((CosThetaL-(-5.148565e-01))/1.407258e-01)**2))*(7.165504e-05-2.621913e-05*CosThetaK+1.453609e-04*CosThetaK**2+2.274953e-05*CosThetaK**3-2.398253e-04*CosThetaK**4-4.428545e-05*CosThetaK**5+9.677067e-05*CosThetaK**6))",
-    "9916.540629*((7.278431e-05*exp(-0.5*((CosThetaL-(-4.905860e-01))/1.878949e-01)**2)+7.448700e-05*exp(-0.5*((CosThetaL-(5.058518e-01))/2.003984e-01)**2)+1.425194e-04*exp(-0.5*((CosThetaL-(1.313125e-02))/2.957232e-01)**2))*(8.311598e-05-2.316101e-05*CosThetaK+1.476586e-04*CosThetaK**2-2.367362e-05*CosThetaK**3-1.683845e-04*CosThetaK**4+5.042865e-06*CosThetaK**5+1.243843e-05*CosThetaK**6))",
-    "8.353802e+03*((1.344021e-04+1.980409e-05*CosThetaL+4.029664e-05*CosThetaL**2+1.560540e-05*CosThetaL**3-2.131400e-04*CosThetaL**4-3.310795e-05*CosThetaL**5+5.462426e-05*CosThetaL**6)*(1.136958e-04-3.718097e-05*CosThetaK+6.443598e-05*CosThetaK**2+5.683602e-05*CosThetaK**3-4.802073e-05*CosThetaK**4-7.413557e-05*CosThetaK**5-3.107261e-05*CosThetaK**6))",
-    "4.392777e+04*((2.114489e-05+2.400662e-06*CosThetaL+2.759247e-05*CosThetaL**2+1.100568e-06*CosThetaL**3-4.538219e-05*CosThetaL**4-2.412249e-06*CosThetaL**5+5.307765e-06*CosThetaL**6)*(2.406814e-05-7.583489e-06*CosThetaK-9.968329e-06*CosThetaK**2+1.463576e-05*CosThetaK**3+3.247851e-05*CosThetaK**4-1.619795e-05*CosThetaK**5-2.949584e-05*CosThetaK**6))",
-    "6.506619e+03*((1.349742e-04+1.528919e-05*CosThetaL+8.605597e-05*CosThetaL**2+1.312572e-05*CosThetaL**3-2.948919e-05*CosThetaL**4-9.566140e-06*CosThetaL**5-5.879247e-05*CosThetaL**6)*(1.581494e-04-3.384666e-05*CosThetaK-1.447583e-05*CosThetaK**2+3.758161e-05*CosThetaK**3+6.777260e-05*CosThetaK**4-5.585069e-05*CosThetaK**5-8.495213e-05*CosThetaK**6))",
-    "4.625695e+04*((1.803216e-05+6.423635e-07*CosThetaL+9.704679e-06*CosThetaL**2+1.065779e-05*CosThetaL**3-1.658277e-06*CosThetaL**4-1.799046e-05*CosThetaL**5+6.089049e-06*CosThetaL**6)*(2.270524e-05-9.322913e-06*CosThetaK-1.587276e-05*CosThetaK**2+2.152708e-05*CosThetaK**3+5.615584e-05*CosThetaK**4-1.901528e-05*CosThetaK**5-4.887378e-05*CosThetaK**6))",
-    "5.118383e+03*((1.668313e-04+1.911185e-05*CosThetaL+1.716389e-05*CosThetaL**2-3.192265e-05*CosThetaL**3+2.000329e-04*CosThetaL**4+1.783316e-05*CosThetaL**5-1.334724e-04*CosThetaL**6)*(2.056593e-04-4.151040e-05*CosThetaK-6.658669e-05*CosThetaK**2+3.742139e-05*CosThetaK**3+1.666491e-04*CosThetaK**4-5.072888e-05*CosThetaK**5-1.492963e-04*CosThetaK**6))",
-    "3.837453e+03*((2.362599e-04-4.438020e-06*CosThetaL+3.318080e-05*CosThetaL**2+1.313482e-05*CosThetaL**3+7.878926e-05*CosThetaL**4-3.939653e-06*CosThetaL**5-2.211163e-05*CosThetaL**6)*(2.669904e-04-4.272653e-05*CosThetaK+1.487773e-05*CosThetaK**2+1.983652e-05*CosThetaK**3-9.317172e-05*CosThetaK**4-3.937610e-05*CosThetaK**5+4.831201e-05*CosThetaK**6))",
-    "9916.540629*((7.278431e-05*exp(-0.5*((CosThetaL-(-4.905860e-01))/1.878949e-01)**2)+7.448700e-05*exp(-0.5*((CosThetaL-(5.058518e-01))/2.003984e-01)**2)+1.425194e-04*exp(-0.5*((CosThetaL-(1.313125e-02))/2.957232e-01)**2))*(8.311598e-05-2.316101e-05*CosThetaK+1.476586e-04*CosThetaK**2-2.367362e-05*CosThetaK**3-1.683845e-04*CosThetaK**4+5.042865e-06*CosThetaK**5+1.243843e-05*CosThetaK**6))"
+    "1.956257e+04*((1.012873e-04*exp(-0.5*((CosThetaL-(-5.149376e-02))/2.691253e-01)**2)+1.753291e-05*exp(-0.5*((CosThetaL-(-5.081329e-01))/1.020913e-01)**2)+3.139890e-05*exp(-0.5*((CosThetaL-(3.949585e-01))/1.798940e-01)**2))*(4.014027e-05+2.536507e-06*CosThetaK+8.510964e-05*CosThetaK**2-3.901914e-05*CosThetaK**3-1.417547e-04*CosThetaK**4+1.895490e-05*CosThetaK**5+6.712456e-05*CosThetaK**6))",
+    "1.725772e+04*((-2.266294e-04*exp(-0.5*((CosThetaL-(9.934612e-02))/4.703605e-01)**2)+2.869562e-04*exp(-0.5*((CosThetaL-(1.864693e-01))/3.975143e-01)**2)+1.012292e-04*exp(-0.5*((CosThetaL-(-3.403547e-01))/3.092047e-01)**2))*(4.817225e-05-1.221187e-05*CosThetaK+7.967950e-05*CosThetaK**2-9.963951e-06*CosThetaK**3-1.175369e-04*CosThetaK**4+5.346328e-06*CosThetaK**5+4.290681e-05*CosThetaK**6))",
+    "1.573860e+04*((7.863660e-05+1.520838e-05*CosThetaL+1.307824e-05*CosThetaL**2-1.650353e-05*CosThetaL**3-2.071539e-04*CosThetaL**4+4.045347e-06*CosThetaL**5+1.199631e-04*CosThetaL**6)*(5.370302e-05-1.857967e-05*CosThetaK+7.086538e-05*CosThetaK**2+2.280521e-05*CosThetaK**3-1.069952e-04*CosThetaK**4-2.815009e-05*CosThetaK**5+4.768032e-05*CosThetaK**6))",
+    "7.753289e+04*((1.387479e-05+5.878928e-07*CosThetaL+2.241570e-06*CosThetaL**2+7.570859e-06*CosThetaL**3-7.891024e-06*CosThetaL**4-6.702975e-06*CosThetaL**5-6.409915e-06*CosThetaL**6)*(1.352108e-05-2.846590e-06*CosThetaK-8.026189e-06*CosThetaK**2+5.090735e-08*CosThetaK**3+2.544798e-05*CosThetaK**4-1.366480e-06*CosThetaK**5-1.990846e-05*CosThetaK**6))",
+    "1.494280e+04*((6.466738e-05+1.022291e-05*CosThetaL+1.688319e-05*CosThetaL**2+5.501163e-06*CosThetaL**3+2.432088e-06*CosThetaL**4-1.026686e-05*CosThetaL**5-4.418552e-05*CosThetaL**6)*(6.722853e-05-1.926792e-05*CosThetaK+2.183848e-06*CosThetaK**2+7.007306e-06*CosThetaK**3+2.034740e-06*CosThetaK**4-8.668490e-06*CosThetaK**5-7.503849e-06*CosThetaK**6))",
+    "8.668694e+04*((9.827671e-06-2.141635e-06*CosThetaL+2.141257e-05*CosThetaL**2+1.525517e-05*CosThetaL**3-5.638121e-05*CosThetaL**4-1.573321e-05*CosThetaL**5+3.998330e-05*CosThetaL**6)*(1.132230e-05-2.538736e-06*CosThetaK+1.643913e-06*CosThetaK**2-2.488876e-06*CosThetaK**3-2.674132e-06*CosThetaK**4+3.154697e-06*CosThetaK**5+1.116817e-06*CosThetaK**6))",
+    "9.981592e+03*((8.686959e-05+1.496039e-05*CosThetaL+8.509338e-06*CosThetaL**2-5.139799e-05*CosThetaL**3+1.438151e-04*CosThetaL**4+4.123038e-05*CosThetaL**5-1.314166e-04*CosThetaL**6)*(1.031246e-04-3.997859e-05*CosThetaK-2.343429e-05*CosThetaK**2+5.256345e-05*CosThetaK**3+4.963996e-05*CosThetaK**4-4.482207e-05*CosThetaK**5-3.512403e-05*CosThetaK**6))",
+    "7.117826e+03*((1.271731e-04-1.007771e-05*CosThetaL+3.140771e-05*CosThetaL**2+2.657901e-05*CosThetaL**3+3.761582e-05*CosThetaL**4-7.479025e-06*CosThetaL**5-3.801289e-05*CosThetaL**6)*(1.405696e-04-3.175964e-05*CosThetaK+4.895380e-06*CosThetaK**2-5.000845e-06*CosThetaK**3-1.694965e-05*CosThetaK**4+1.181410e-05*CosThetaK**5+1.087538e-05*CosThetaK**6))",
+    "1.797396e+04*((9.449931e-05+1.072792e-06*CosThetaL-2.153855e-04*CosThetaL**2+5.704460e-06*CosThetaL**3+1.324597e-04*CosThetaL**4-7.380861e-06*CosThetaL**5-1.004489e-05*CosThetaL**6)*(4.500441e-05-7.011887e-06*CosThetaK+8.432796e-05*CosThetaK**2-2.055242e-05*CosThetaK**3-1.296130e-04*CosThetaK**4+1.050718e-05*CosThetaK**5+5.280551e-05*CosThetaK**6))"
 };
 // Lumi = Nreco/(cross section*branch factor*filter efficiency), cross section is 49.59e9 [pb] for 8TeV and 48.44e9 [pb] for 7TeV.
 // BF_BuToK*MuMu = 1.07E-6, 1.12E-6(2014)
@@ -523,7 +524,7 @@ void bmass(int iBin, const char outfile[] = "bmass")
   RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
   int mumuMassWindowBin = 1+2*isCDFcut;
   if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-  RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+  RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
   data->Print();
 
@@ -1675,6 +1676,7 @@ void createRecoEffHist(int iBin) // create reco efficiency histogram from offici
     double gmupeta= 0;
     double gmumpt = 0;
     double gmumeta= 0;
+    double Triggers=0;
 
     ch->SetBranchStatus("*",0);
     ch->SetBranchStatus("Bmass"         , 1);
@@ -1693,6 +1695,7 @@ void createRecoEffHist(int iBin) // create reco efficiency histogram from offici
     ch->SetBranchAddress("genMupEta"    , &gmupeta);
     ch->SetBranchAddress("genMumPt"     , &gmumpt);
     ch->SetBranchAddress("genMumEta"    , &gmumeta);
+    ch->SetBranchAddress("Triggers"     , &Triggers);
 
     // Fill histograms
     const int nKBins = 20;
@@ -1706,6 +1709,7 @@ void createRecoEffHist(int iBin) // create reco efficiency histogram from offici
     for (int entry = 0; entry < ch->GetEntries(); entry++) {
         ch->GetEntry(entry);
         if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
+        if (Triggers == 0) continue;
         if ( fabs(gmumeta) < 2.3 && fabs(gmupeta) < 2.3 && gmumpt > 2.8 && gmuppt > 2.8 ) h2_nacc.Fill(gCosThetaL,gCosThetaK);
         if (BMass != 0 && ((Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-     3.5*Mumumasserr)) ){
             h2_nreco.Fill(gCosThetaL,gCosThetaK);
@@ -1799,8 +1803,8 @@ std::string accXrecoEff2(int iBin, bool keepParam = true) // acceptance*reconstr
 
     printf("Evaluate full efficiency for bin#%d\n",iBin);
         // cut3-8TeV
-    double effUpperBound = 0.00045;
-    if (iBin == 3 || iBin == 5) effUpperBound = 4e-5;
+    double effUpperBound = 0.00012;
+    if (iBin == 3 || iBin == 5) effUpperBound = 2e-5;
     double BMass = 0;
     double Mumumass = 0;
     double Mumumasserr = 0;
@@ -1813,6 +1817,7 @@ std::string accXrecoEff2(int iBin, bool keepParam = true) // acceptance*reconstr
     double gmumpt = 0;
     double gmumeta= 0;
     double gmumphi= 0;
+    int    triggers=0;
 
     ch->SetBranchStatus("*",0);
     ch->SetBranchStatus("Bmass"         , 1);
@@ -1821,6 +1826,7 @@ std::string accXrecoEff2(int iBin, bool keepParam = true) // acceptance*reconstr
     ch->SetBranchStatus("genQ2"         , 1);
     ch->SetBranchStatus("genCosTheta*"  , 1);
     ch->SetBranchStatus("genMu*"        , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
     ch->SetBranchAddress("Bmass"        , &BMass);
     ch->SetBranchAddress("Mumumass"     , &Mumumass);
     ch->SetBranchAddress("Mumumasserr"  , &Mumumasserr);
@@ -1833,6 +1839,7 @@ std::string accXrecoEff2(int iBin, bool keepParam = true) // acceptance*reconstr
     ch->SetBranchAddress("genMumPt"     , &gmumpt);
     ch->SetBranchAddress("genMumEta"    , &gmumeta);
     ch->SetBranchAddress("genMumPhi"    , &gmumphi);
+    ch->SetBranchAddress("Triggers"     , &triggers);
 
     // Load acceptance
     TFile f_acc("acceptance_8TeV.root");
@@ -1877,7 +1884,7 @@ std::string accXrecoEff2(int iBin, bool keepParam = true) // acceptance*reconstr
             h2_nacc.Fill(gCosThetaL,gCosThetaK);
             h_naccL.Fill(gCosThetaL);
             h_naccK.Fill(gCosThetaK);
-            if (BMass != 0 && ((Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)) ){
+            if ( triggers > 0 && BMass != 0 && ((Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)) ){
                 if (isCDFcut == 0 || iBin == 3 || iBin == 5){
                     h2_nreco.Fill(gCosThetaL,gCosThetaK);
                     h_nrecoL.Fill(gCosThetaL);
@@ -2466,12 +2473,14 @@ void angular2D_bin(int iBin, const char outfile[] = "angular2D")
     ch->SetBranchStatus("Mumumasserr"   , 1);
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
     RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
 
     TFile *f_wspace_sigA = new TFile(TString::Format("%s/wspace_sigA_bin%d.root",iwspacepath.Data(),iBin));
     RooWorkspace *wspace_sigA = (RooWorkspace*)f_wspace_sigA->Get("wspace");
@@ -2504,7 +2513,7 @@ void angular2D_bin(int iBin, const char outfile[] = "angular2D")
     
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, CosThetaK,CosThetaL),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, CosThetaK,CosThetaL, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
     // Fitting procedure in TMinuit
     double isMigradConverge[2] = {-1,0};
@@ -2721,10 +2730,17 @@ void angular2D(const char outfile[] = "angular2D", bool doFit=false) // 2D check
 void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool keepParam = false)
 {//{{{
     // Fit to signal simulation by YsSm+YcCm to determine Sm
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
     RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Triggers("Triggers","",0,100);
     
     // Create parameters and PDFs
         // Signal double gaussian
@@ -2745,7 +2761,7 @@ void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool ke
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr,Triggers),TString::Format("(%s) && (%s) && (%s)", nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     RooFitResult *f_fitresult = f.fitTo(*data,Extended(kTRUE),Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
 
     // Draw the frame on the canvas
@@ -2833,10 +2849,17 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     }
 
     // Fit to control channel simulations by YpPm to determine Yp,Pm.
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
     RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Triggers("Triggers","",0,100);
     RooAddition Bmass_offset("Bmass_offset","Bmass_offset",RooArgSet(Bmass,RooConst(-5)));
     
     // Create peak background distribution
@@ -2932,7 +2955,7 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr,Triggers),TString::Format("(%s) && (%s) && (%s)", nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     RooFitResult *f_fitresult = f_bkgPeakM12B.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Extended(),Minos(kTRUE));
 
     // Draw the frame on the canvas
@@ -3035,11 +3058,20 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
         return;
     }
 
-    RooRealVar Q2("Q2","q^{2}",0.5,20.);
-    RooRealVar CosThetaK("CosThetaK", "cos#theta_{K}", -1., 1.);
-    RooRealVar CosThetaL("CosThetaL", "cos#theta_{L}", -1., 1.);
-    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,sqrt(20.));
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
+    RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
     
     RooRealVar bkgPeak_c1(TString::Format("bkg%sPeak_c1",decmode),"bkgPeak_c1",readParam(iBin,TString::Format("bkg%sPeak_c1",decmode),0,0.,0.),-10,10);
     RooRealVar bkgPeak_c2(TString::Format("bkg%sPeak_c2",decmode),"bkgPeak_c2",readParam(iBin,TString::Format("bkg%sPeak_c2",decmode),0,0.,0.),-10,10);
@@ -3121,7 +3153,7 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
     // Get data
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, CosThetaK, CosThetaL ,Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, CosThetaK, CosThetaL ,Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     f_bkgPeakL.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
     f_bkgPeakK.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
     bkgPeak_c1.setConstant(kTRUE);
@@ -3246,16 +3278,24 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
 void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool keepParam = false)
 {//{{{
     // Fit to signal simulation by YsSm+YcCm to determine Sm
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
-    RooRealVar Bmass("Bmass"             , "M_{K^{*}#mu#mu}"     , 5.  , 5.56 ) ;
-    RooRealVar Mumumass("Mumumass"       , "M^{#mu#mu}"          , 0.  , 10.  ) ;
-    RooRealVar Mumumasserr("Mumumasserr" , "Error of M^{#mu#mu}" , 0.  , 10.  ) ;
-    RooRealVar Q2("Q2"                   , "q^{2}"               , 0.5 , 20.  ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
+    RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
 
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 0;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr),TString::Format("(%s) && (%s) && (Bmass > 5.38 || Bmass < 5.18)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (Bmass > 5.38 || Bmass < 5.18)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     if (data->sumEntries() == 0){
         return;
     }
@@ -3566,12 +3606,20 @@ void angular2D_data_bin(int iBin, const char outfile[] = "angular2D_data")
     if (iBin==3 || iBin==5) return;
     
     // Read data
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
-    RooRealVar Bmass("Bmass"             , "M_{K^{*}#mu#mu}"     , 5.  , 5.56 ) ;
-    RooRealVar Mumumass("Mumumass"       , "M^{#mu#mu}"          , 0.  , 10.  ) ;
-    RooRealVar Mumumasserr("Mumumasserr" , "Error of M^{#mu#mu}" , 0.  , 10.  ) ;
-    RooRealVar Q2("Q2"                   , "q^{2}"               , 0.5 , 20.  ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
+    RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
     RooAddition Bmass_offset("Bmass_offset","Bmass_offset",RooArgSet(Bmass,RooConst(-5)));
     RooProduct Bmass_norm("Bmass_norm","Bmass_norm",RooArgSet(Bmass_offset,RooConst(1./0.56)));
         
@@ -3728,7 +3776,7 @@ void angular2D_data_bin(int iBin, const char outfile[] = "angular2D_data")
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     fs  ->setConstant(kTRUE);
     as  ->setConstant(kTRUE);
     f   ->fitTo(*data,Hesse(kFALSE));
@@ -3851,18 +3899,26 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     if (iBin==3 || iBin==5) return;
 
     // Read data
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
-    RooRealVar Bmass("Bmass"             , "M_{K^{*}#mu#mu}"     , 5.  , 5.56 ) ;
-    RooRealVar Mumumass("Mumumass"       , "M^{#mu#mu}"          , 0.  , 10.  ) ;
-    RooRealVar Mumumasserr("Mumumasserr" , "Error of M^{#mu#mu}" , 0.  , 10.  ) ;
-    RooRealVar Q2("Q2"                   , "q^{2}"               , 0.5 , 20.  ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
+    RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
     RooAddition Bmass_offset("Bmass_offset","Bmass_offset",RooArgSet(Bmass,RooConst(-5)));
     RooProduct Bmass_norm("Bmass_norm","Bmass_norm",RooArgSet(Bmass_offset,RooConst(1./0.56)));
 
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     if (data->sumEntries() == 0){
         return;
     }
@@ -4441,15 +4497,23 @@ void scanNLL(int iBin, const char outfile[] = "scanNLL")
     printf("WARNING\t\t: The scale factor for background is %d\n",dataScaleFactor);
 
     // Get data
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
-    RooRealVar Bmass("Bmass"             , "M_{K^{*}#mu#mu}"     , 5.  , 5.56 ) ;
-    RooRealVar Mumumass("Mumumass"       , "M^{#mu#mu}"          , 0.  , 10.  ) ;
-    RooRealVar Mumumasserr("Mumumasserr" , "Error of M^{#mu#mu}" , 0.  , 10.  ) ;
-    RooRealVar Q2("Q2"                   , "q^{2}"               , 0.5 , 20.  ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
+    RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
     // Load f from wspace_angular3D_bin and datacard
     double minNll = readParam(iBin,"migrad",1);
@@ -4737,15 +4801,23 @@ double getNLL(int iBin, double testFl, double testAfb, bool unboundedArg=false, 
     const double psi2sScaleFactor = dataScaleFactor;
 
     // Get data
+    ch->SetBranchStatus("*",0);
+    ch->SetBranchStatus("Bmass"         , 1);
+    ch->SetBranchStatus("Mumumass"      , 1);
+    ch->SetBranchStatus("Mumumasserr"   , 1);
+    ch->SetBranchStatus("CosTheta*"     , 1);
+    ch->SetBranchStatus("Q2"            , 1);
+    ch->SetBranchStatus("Triggers"      , 1);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
-    RooRealVar Bmass("Bmass"             , "M_{K^{*}#mu#mu}"     , 5.  , 5.56 ) ;
-    RooRealVar Mumumass("Mumumass"       , "M^{#mu#mu}"          , 0.  , 10.  ) ;
-    RooRealVar Mumumasserr("Mumumasserr" , "Error of M^{#mu#mu}" , 0.  , 10.  ) ;
-    RooRealVar Q2("Q2"                   , "q^{2}"               , 0.5 , 20.  ) ;
+    RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
+    RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+    RooRealVar Q2("Q2","q^{2}",0.5,20.);
+    RooRealVar Triggers("Triggers","",0,100);
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr),TString::Format("(%s) && (%s)",q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
     // Load f from wspace_angular3D_bin and datacard
     double minNll = readParam(iBin,"migrad",1);
