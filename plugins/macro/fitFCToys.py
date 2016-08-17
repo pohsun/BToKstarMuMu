@@ -23,8 +23,8 @@ class transfer_thread(Thread):
         print "Processing folder",self.headfolder,self.subfolder
         sys.stdout.flush()
         time.sleep(5)
-        cmd=["../fit", "angular3D_bins"  ,self.fullpath+"/*.root", "--iallpath="+self.headfolder, "--oallpath="+self.fullpath, "--iCombBkgWspacepath="+self.fullpath]
-        # print cmd
+        cmd=["../fit", "angular3D_bins"  ,self.fullpath+"/*.root", "--iallpath="+self.headfolder, "--oallpath="+self.fullpath, "--iCombBkgWspacepath="+self.fullpath, "--keeplog", "--keepparam"]
+        print cmd
         operation = subprocess.Popen(cmd)
         operation.wait()
         self.status=0
@@ -36,9 +36,6 @@ if len(sys.argv) == 2 :
     headfolder = sys.argv[1]
 else:
     exit(1)
-
-# if os.path.isfile(headfiler+"/FCScanResult.pdf"):
-    # exit(0)
 
 # Prepare wspaces
 iwspacepath="../"
@@ -58,6 +55,9 @@ subfolderPattern = re.compile("^set[0-9]...$")
 for idx in os.listdir(headfolder):
     if not subfolderPattern.match(idx):
         continue
+    else:
+        print "Processing subfolder {0}".format(idx)
+
 
     n_active_proc = number_of_threads
     while n_active_proc>=number_of_threads:
