@@ -73,11 +73,16 @@
 using namespace std; 
 using namespace RooFit;
 
+// note : 
+//      1~6, 1~19 with peak regions excluded.
+
+
 // Tags configration
 bool redirectStdout = false;
 bool is7TeVCheck = false; // Using 2011 efficiency map.
 bool gKeepParam = false;
-int isCDFcut = 0; // 0 for off, 1 for cdf, 2 for LHCb
+int isCDFcut = 4; // -1 for off, 1 for cdf, 2 for LHCb . 3 for 16Aug reOptimization
+bool isToy=false; // For toy, no CDF cut is applied
 TChain *ch=new TChain("tree");
 TString plotpath="./plots";
 TString iwspacepath=".";
@@ -89,7 +94,7 @@ TString ologpath=".";
 double  scaleFactor=1.;
 //Constants, Fit results for efficiency, etc.. //{{{
 const int nQ2Ranges = 13;
-char genQ2range[nQ2Ranges][32] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
+char genQ2range[nQ2Ranges][128] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
                                   "genQ2 < 4.30 && genQ2 > 2.00",
                                   "genQ2 < 8.68 && genQ2 > 4.30",
                                   "genQ2 <10.09 && genQ2 > 8.68",//Jpsi
@@ -100,9 +105,9 @@ char genQ2range[nQ2Ranges][32] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
                                   "genQ2 < 4.30 && genQ2 > 1.00",// merge 0+1
                                   "genQ2 <19.00 && genQ2 >14.18",// merge 6+7
                                   "genQ2 < 8.68 && genQ2 > 1.00",// merge 0+1+2
-                                  "genQ2 <19.00 && genQ2 > 1.00",
+                                  "(genQ2 <8.68 && genQ2 > 1.00) || (genQ2 > 10.09 && genQ2 < 12.86) || (genQ2 >14.18 && genQ2 <19.00)",
                                   "genQ2 < 6.00 && genQ2 > 1.00"};
-char q2range[nQ2Ranges][32] = {"Q2 < 2.00 && Q2 > 1.00",
+char q2range[nQ2Ranges][128] = {"Q2 < 2.00 && Q2 > 1.00",
                                "Q2 < 4.30 && Q2 > 2.00",
                                "Q2 < 8.68 && Q2 > 4.30",
                                "Q2 <10.09 && Q2 > 8.68",
@@ -113,7 +118,7 @@ char q2range[nQ2Ranges][32] = {"Q2 < 2.00 && Q2 > 1.00",
                                "Q2 < 4.30 && Q2 > 1.00",//0+1
                                "Q2 <19.00 && Q2 >14.18",//6+7
                                "Q2 < 8.68 && Q2 > 1.00",//0+1+2
-                               "Q2 <19.00 && Q2 > 1.00",
+                               "(Q2 <8.68 && Q2 > 1.00) || (Q2 > 10.09 && Q2 < 12.86) || (Q2 >14.18 && Q2 <19.00)",
                                "Q2 < 6.00 && Q2 > 1.00"};
 char q2rangeLatex[nQ2Ranges][32] = {" 1.00 < q^{2} < 2.00",
                                     " 2.00 < q^{2} < 4.30",
@@ -131,22 +136,22 @@ char q2rangeLatex[nQ2Ranges][32] = {" 1.00 < q^{2} < 2.00",
 double q2rangedn[nQ2Ranges] = {1.00 , 2.00 , 4.30 , 8.68  , 10.09 , 12.86 , 14.18 , 16.00 , 1.00 , 14.18 , 1.00 ,  1.00 , 1.00};
 double q2rangeup[nQ2Ranges] = {2.00 , 4.30 , 8.68 , 10.09 , 12.86 , 14.18 , 16.00 , 19.00 , 4.30 , 19.00 , 8.68 , 19.00 , 6.00};
 char nTriggeredPath[3][32] = {"Triggers == 0", "Triggers == 1", "Triggers >= 1"};
-char mumuMassWindow[7][512] = { "Mumumass > 0",
+char mumuMassWindow[11][512] = { "Mumumass > 0",
                                 "(Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)",
                                 "(Mumumass < 3.096916+3*Mumumasserr && Mumumass > 3.096916-5*Mumumasserr) || (Mumumass < 3.686109+3*Mumumasserr && Mumumass > 3.686109-3*Mumumasserr)",
-                                //"Mumumass < 3.096916+3*Mumumasserr && Mumumass > 3.096916-5*Mumumasserr",
-                                //"Mumumass < 3.686109+3*Mumumasserr && Mumumass > 3.686109-3*Mumumasserr",
                                 "(Mumumass*Mumumass<8.68 && Bmass-Mumumass>2.182+0.16 && Bmass-Mumumass<2.182-0.16) || (Mumumass*Mumumass>10.09 && Mumumass*Mumumass<12.86 && Bmass-Mumumass>1.593+0.06 && Bmass-Mumumass<1.593-0.06) || (Mumumass*Mumumass>14.18 && Bmass-Mumumass>1.593+0.06 && Bmass-Mumumass<1.593-0.06)",
                                 "(Mumumass*Mumumass < 8.68 && ( Bmass-Mumumass < 2.182+0.16 || Bmass-Mumumass > 2.182-0.16)) || (Mumumass*Mumumass>8.68 && Mumumass*Mumumass<10.09) || (Mumumass*Mumumass > 10.09 && Mumumass < 12.86 && ( Bmass-Mumumass < 1.593+0.06 || Bmass-Mumumass > 1.593-0.06)) || (Mumumass*Mumumass>12.86 && Mumumass*Mumumass<14.08) || (Mumumass*Mumumass > 14.08 && (Bmass-Mumumass > 1.593-0.06 || Bmass-Mumumass < 1.593+0.06))",
-                                //"Bmass > 5.168 || (Bmass < 5.168 && Bmass-Mumumass-2.182 > 0.15) || (Bmass < 5.168 && Bmass-Mumumass-2.182 < -0.15) || (Bmass < 5.168 && Bmass-Mumumass-1.593 > 0.07) || (Bmass < 5.168 && Bmass-Mumumass-1.593 < -0.07)",
-                                //"Bmass > 5.23 || (Bmass < 5.23 && Bmass-Mumumass-2.182 < 0.15 && Bmass-Mumumass-2.182 > -0.15) || (Bmass < 5.23 && Bmass-Mumumass-1.593 < 0.07 && Bmass-Mumumass-1.593 > -0.07)"
-                                "Mumumasserr > 0",
-                                "Mumumasserr > 0"
-};//None, sig, bkg, #Jpsi, #Psi2S, CDF, anti-CDF, LHCb, anti-LHCb
-double genAfb   [11]={-0.160   , -0.066   , 0.182    , 0.317    , 0.374    , 0.412    , 0.421    , 0.376    , -0.098   , 0.398    , 0.069};
-double genAfberr[11]={0.000434 , 0.000285 , 0.000223 , 0.000383 , 0.000277 , 0.000421 , 0.000395 , 0.000422 , 0.000333 , 0.000146 , 0.000292};
-double genFl    [11]={0.705    , 0.791    , 0.649    , 0.524    , 0.454    , 0.399    , 0.369    , 0.341    , 0.7620   , 0.355    , 0.694};
-double genFlerr [11]={0.000568 , 0.000409 , 0.000271 , 0.000420 , 0.000287 , 0.000415 , 0.000369 , 0.000361 , 0.000240 , 0.000132 , 0.000258};
+                                "Mumumass > 0",
+                                "Mumumass > 0",
+                                "Mumumass > 0",
+                                "Mumumass > 0",
+                                "abs(Bmass-Mumumass-2.182)>0.09 && abs(Bmass-Mumumass-1.593)>0.03",
+                                "abs(Bmass-Mumumass-2.182)<0.09 || abs(Bmass-Mumumass-1.593)<0.03",
+};//None, sig, bkg, #Jpsi, #Psi2S, CDF, anti-CDF, LHCb, anti-LHCb, 16Aug reOptimization, anti-16Aug-reOptimization, sel_v3p5, anti-sel_v3p5
+double genAfb   [nQ2Ranges]={-0.160   , -0.066   , 0.182    , 0.317    , 0.374    , 0.412    , 0.421    , 0.376    , -0.098   , 0.398    , 0.069};
+double genAfberr[nQ2Ranges]={0.000434 , 0.000285 , 0.000223 , 0.000383 , 0.000277 , 0.000421 , 0.000395 , 0.000422 , 0.000333 , 0.000146 , 0.000292};
+double genFl    [nQ2Ranges]={0.705    , 0.791    , 0.649    , 0.524    , 0.454    , 0.399    , 0.369    , 0.341    , 0.7620   , 0.355    , 0.694};
+double genFlerr [nQ2Ranges]={0.000568 , 0.000409 , 0.000271 , 0.000420 , 0.000287 , 0.000415 , 0.000369 , 0.000361 , 0.000240 , 0.000132 , 0.000258};
 std::string f_accXrecoEff_ord0[11] = { // default values
     "1.956257e+04*((1.012873e-04*exp(-0.5*((CosThetaL-(-5.149376e-02))/2.691253e-01)**2)+1.753291e-05*exp(-0.5*((CosThetaL-(-5.081329e-01))/1.020913e-01)**2)+3.139890e-05*exp(-0.5*((CosThetaL-(3.949585e-01))/1.798940e-01)**2))*(4.014027e-05+2.536507e-06*CosThetaK+8.510964e-05*CosThetaK**2-3.901914e-05*CosThetaK**3-1.417547e-04*CosThetaK**4+1.895490e-05*CosThetaK**5+6.712456e-05*CosThetaK**6))",
     "1.725772e+04*((-2.266294e-04*exp(-0.5*((CosThetaL-(9.934612e-02))/4.703605e-01)**2)+2.869562e-04*exp(-0.5*((CosThetaL-(1.864693e-01))/3.975143e-01)**2)+1.012292e-04*exp(-0.5*((CosThetaL-(-3.403547e-01))/3.092047e-01)**2))*(4.817225e-05-1.221187e-05*CosThetaK+7.967950e-05*CosThetaK**2-9.963951e-06*CosThetaK**3-1.175369e-04*CosThetaK**4+5.346328e-06*CosThetaK**5+4.290681e-05*CosThetaK**6))",
@@ -169,7 +174,7 @@ std::string f_accXrecoEff_ord0[11] = { // default values
 // BF_K*ToK0Pi  = 2/3  (K* decays to Kpi)
 // BF_K0ToKs  = 1/2
 // BF_KsToPiPi = 2/3
-double datasetLumi[5] = {19.4,37378.629,295.761,218.472,9.81};//data, BuToKstarMuMu(16281.440+21097.189), BuToKstarJpsi(118.201+177.560), BuToKstarPsi2S(63.103,155.369), JpsiX
+double datasetLumi[5] = {19.98,37378.629,295.761,218.472,9.81};//data, BuToKstarMuMu(16281.440+21097.189), BuToKstarJpsi(118.201+177.560), BuToKstarPsi2S(63.103,155.369), JpsiX
 //}}}
 
 double readParam(int iBin, const char parName[], int iColumn, double defVal=0., double forceReturn=999.)
@@ -531,13 +536,18 @@ void bmass(int iBin, const char outfile[] = "bmass")
   ch->SetBranchStatus("Mumumass"      , 1);
   ch->SetBranchStatus("Mumumasserr"   , 1);
   ch->SetBranchStatus("Q2"            , 1);
-  RooRealVar Bmass("Bmass", "B^{+/-} mass(GeV/c^{2})", 5.27953-0.28, 5.27953+0.28) ;
+  ch->SetBranchStatus("Triggers"      , 1);
+  RooRealVar Bmass("Bmass", "B^{+/-} mass(GeV/c^{2})", 5.1, 5.6) ;
   RooRealVar Q2("Q2","q^{2}",0.5,20.);
   RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
   RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
+  RooRealVar Triggers("Triggers","",0,100);
   int mumuMassWindowBin = 1+2*isCDFcut;
-  if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
-  RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+  if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
+  RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+  if (data->sumEntries() == 0){
+      return;
+  }
 
   data->Print();
 
@@ -791,130 +801,24 @@ std::vector<double> angular_gen_bin(int iBin, const char outfile[] = "angular_ge
     delete data;
 
     //write output
+    double outputp[4] = {0,0,0,0};
+    outputp[0] = fl.getVal();
+    outputp[1] = fl.getError();
+    outputp[2] = fl.getErrorLo();
+    outputp[3] = fl.getErrorHi();
+    writeParam(iBin,"fl_gen",outputp,4);
+    outputp[0] = afb.getVal();
+    outputp[1] = afb.getError();
+    outputp[2] = afb.getErrorLo();
+    outputp[3] = afb.getErrorHi();
+    writeParam(iBin,"afb_gen",outputp,4);
+
     std::vector<double> output;
     output.push_back(fl.getVal());
     output.push_back(fl.getError());
     output.push_back(afb.getVal());
     output.push_back(afb.getError());
     return output;
-
-}//}}}
-
-std::vector<double> angular3D_gen_bin(int iBin, const char outfile[] = "angular3D_gen")
-{//{{{
-
-    RooRealVar genCosThetaK("genCosThetaK", "cos#theta_{K}", -1., 1.);
-    RooRealVar genCosThetaL("genCosThetaL", "cos#theta_{L}", -1., 1.);
-    RooRealVar genCosPhi   ("genCosPhi", "cos#Phi", -1., 1.);
-    RooRealVar genQ2("genQ2","q^{2}",0.5,20.);
-    RooRealVar fl("fl", "F_{L}", genFl[iBin], 0.2, 0.9);
-    RooRealVar afb("afb", "A_{FB}", genAfb[iBin], -0.3, 0.5);
-    RooRealVar fs("fs","F_{S}",0.,-0.1,0.1); //Very close to 0.
-    RooRealVar as("as","A_{S}",0.01,-1,1.);
-    //fs.setConstant(kTRUE);
-    //as.setConstant(kTRUE);
-
-    RooRealVar nsig("nsig","nsig",1E6,1E2,1E9);
-    RooRealVar nbkg("nbkg","nbkg",10,0.1,1E4);
-    
-    RooGenericPdf f_sig("f_sig", "9/16*((2/3*fs+4/3*as*genCosThetaK)*(1-genCosThetaL*genCosThetaL)+(1-fs)*(2*fl*genCosThetaK*genCosThetaK*(1-genCosThetaL*genCosThetaL)+1/2*(1-fl)*(1-genCosThetaK*genCosThetaK)*(1+genCosThetaL*genCosThetaL)+4/3*afb*(1-genCosThetaK*genCosThetaK)*genCosThetaL))", RooArgSet(genCosThetaK,genCosThetaL,fl,afb,fs,as));
-    RooExtendPdf f("f","",f_sig,nsig);
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(genCosThetaK,genCosThetaL,genCosPhi, genQ2),genQ2range[iBin],0);
-
-    RooFitResult *f_fitresult = f.fitTo(*data,Extended(kTRUE),Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE),NumCPU(4));
-
-    // Draw the frame on the canvas
-    TCanvas* c = new TCanvas("c");
-    RooPlot* framecosk = genCosThetaK.frame(); 
-    data->plotOn(framecosk,Binning(100)); 
-    f.plotOn(framecosk); 
-
-    framecosk->SetTitle("");
-    framecosk->SetMinimum(0);
-    framecosk->Draw();
-
-    TLatex *t1 = new TLatex();
-    t1->SetNDC();
-    double fixNDC = -0.5;
-    if (iBin < 5) fixNDC = 0.;
-    t1->DrawLatex(.35,.86+fixNDC,TString::Format("%s",genQ2range[iBin]));
-    t1->DrawLatex(.35,.80+fixNDC,TString::Format("F_{L}=%5.3f#pm%8.6f",fl.getVal(),fl.getError()));
-    t1->DrawLatex(.35,.74+fixNDC,TString::Format("A_{FB}=%5.3f#pm%8.6f",afb.getVal(),afb.getError()));
-    c->SaveSource(TString::Format("%s/%s_cosk_bin%d.cc",plotpath.Data(),outfile,iBin));
-    c->Print(TString::Format("%s/%s_cosk_bin%d.pdf",plotpath.Data(),outfile,iBin));
-
-    //
-    RooPlot* framecosl = genCosThetaL.frame(); 
-    data->plotOn(framecosl,Binning(100)); 
-    f.plotOn(framecosl); 
-
-    framecosl->SetTitle("");
-    framecosl->SetMinimum(0);
-    framecosl->Draw();
-
-    fixNDC = -0.5;
-    if (iBin > 4) fixNDC = 0.;
-    t1->DrawLatex(.35,.86+fixNDC,TString::Format("%s",genQ2range[iBin]));
-    t1->DrawLatex(.35,.80+fixNDC,TString::Format("F_{L}=%5.3f#pm%8.6f",fl.getVal(),fl.getError()));
-    t1->DrawLatex(.35,.74+fixNDC,TString::Format("A_{FB}=%5.3f#pm%8.6f",afb.getVal(),afb.getError()));
-    c->Update();
-    c->SaveSource(TString::Format("%s/%s_cosl_bin%d.cc",plotpath.Data(),outfile,iBin));
-    c->Print(TString::Format("%s/%s_cosl_bin%d.pdf",plotpath.Data(),outfile,iBin));
-    //
-    //Cos-Phi
-    RooPlot* framecosphi = genCosPhi.frame(); 
-    data->plotOn(framecosphi,Binning(100)); 
-    f.plotOn(framecosphi); 
-
-    framecosphi->SetTitle("");
-    framecosphi->SetMinimum(0);
-    framecosphi->Draw();
-
-    fixNDC = -0.5;
-    if (iBin > 4) fixNDC = 0.;
-    t1->DrawLatex(.35,.86+fixNDC,TString::Format("%s",genQ2range[iBin]));
-    t1->DrawLatex(.35,.80+fixNDC,TString::Format("F_{L}=%5.3f#pm%8.6f",fl.getVal(),fl.getError()));
-    t1->DrawLatex(.35,.74+fixNDC,TString::Format("A_{FB}=%5.3f#pm%8.6f",afb.getVal(),afb.getError()));
-    c->Update();
-    c->SaveSource(TString::Format("%s/%s_cosPhi_bin%d.cc",plotpath.Data(),outfile,iBin));
-    c->Print(TString::Format("%s/%s_cosPhi_bin%d.pdf",plotpath.Data(),outfile,iBin));
-    //
-    // Make 2-D plot
-    TH1 *h1 = data->createHistogram("genCosThetaL,genCosThetaK", 100, 100);
-    h1->Draw("LEGO2");
-    TH1 *h2 = data->createHistogram("genCosThetaL,genCosPhi", 100, 100);
-    h2->Draw("LEGO2");
-    TH1 *h3 = data->createHistogram("genCosThetaK,genCosPhi", 100, 100);
-    h3->Draw("LEGO2");
-    c->Update();
-    c->SaveSource(TString::Format("%s/%s_2D_bin%d.cc",plotpath.Data(),outfile,iBin));
-    c->Print(TString::Format("%s/%s_2D_bin%d.pdf",plotpath.Data(),outfile,iBin));
-
-    // clear
-    delete t1;
-    delete c;
-    delete data;
-
-    //write output
-    //write output
-    double output[4] = {0,0,0,0};
-    output[0] = fl.getVal();
-    output[1] = fl.getError();
-    output[2] = fl.getErrorLo();
-    output[3] = fl.getErrorHi();
-    writeParam(iBin,"fl_gen",output,4);
-    output[0] = afb.getVal();
-    output[1] = afb.getError();
-    output[2] = afb.getErrorLo();
-    output[3] = afb.getErrorHi();
-    writeParam(iBin,"afb_gen",output,4);
-
-    std::vector<double> outputv;
-    outputv.push_back(fl.getVal());
-    outputv.push_back(fl.getError());
-    outputv.push_back(afb.getVal());
-    outputv.push_back(afb.getError());
-    return outputv;
 
 }//}}}
 
@@ -936,7 +840,6 @@ void angular_gen(const char outfile[] = "angular_gen")
     }
 
     if (doFit){
-        std::vector<double> vbin;
         for(int ibin = 0; ibin < nWorkBins; ibin++){
             angular_gen_bin(workBins[ibin],outfile);
         }
@@ -1043,6 +946,8 @@ std::vector<double> acceptance(int iBin) // acceptance. Not used in standard pro
     for (int entry = 0; entry < ch->GetEntries(); entry++) {
         ch->GetEntry(entry);
         if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
+        if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
+        if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
         h2_ngen.Fill(gCosThetaL,gCosThetaK);
         if ( fabs(gmumeta) < 2.3 && fabs(gmupeta) < 2.3 && gmumpt > 2.8 && gmuppt > 2.8 ) h2_nacc.Fill(gCosThetaL,gCosThetaK);
     }
@@ -1304,6 +1209,8 @@ std::vector<double> recoEff(int iBin) // reconstruction efficiency. Not used in 
     for (int entry = 0; entry < ch->GetEntries(); entry++) {
         ch->GetEntry(entry);
         if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
+        if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
+        if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
         if ( fabs(gmumeta) < 2.3 && fabs(gmupeta) < 2.3 && gmumpt > 2.8 && gmuppt > 2.8 ) h2_nacc.Fill(gCosThetaL,gCosThetaK);
         if (BMass != 0 && ((Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-     3.5*Mumumasserr)) ){
             h2_nreco.Fill(gCosThetaL,gCosThetaK);
@@ -1530,7 +1437,7 @@ void createAcceptanceHist() // create acceptance histogram from UNFILTERED GEN.
     double gmumphi= 0;
 
     TChain *treein=new TChain("tree");
-    treein->Add("./sel_v3p3/cut3-LHCb/sel_BToKstarMuMu_NoFilt_8TeV_mc_genonly_merge.root"); // fixed input
+    treein->Add("./sel_v3p5/unfilt-mc-genonly/sel_BToKstarMuMu_NoFilt_8TeV_mc_genonly_s*.root"); // fixed input
     if (treein == NULL) gSystem->Exit(0);
     treein->SetBranchStatus("*",0);
     treein->SetBranchStatus("genQ2"         , 1);
@@ -1631,6 +1538,8 @@ void createAcceptanceHist() // create acceptance histogram from UNFILTERED GEN.
         treein->GetEntry(entry);
         for(int iBin = 0; iBin < nQ2Ranges; iBin++){
             if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
+            if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
+            if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
             h2_ngen[iBin]->Fill(gCosThetaL,gCosThetaK);
             h2_ngen_fine[iBin]->Fill(gCosThetaL,gCosThetaK);
             h_ngenL_fine[iBin]->Fill(gCosThetaL);
@@ -1935,29 +1844,37 @@ std::string accXrecoEff2(int iBin, bool keepParam = false) // acceptance*reconst
     h_nrecoK.SetYTitle("#Events/0.2");
     for (int entry = 0; entry < ch->GetEntries(); entry++) {
         ch->GetEntry(entry);
+        if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
+        if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
         if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
         if ( fabs(gmupeta) < 2.3 && gmuppt > 2.8 && fabs(gmumeta) < 2.3 && gmumpt > 2.8){
             h2_nacc.Fill(gCosThetaL,gCosThetaK);
             h_naccL.Fill(gCosThetaL);
             h_naccK.Fill(gCosThetaK);
             if ( triggers > 0 && BMass != 0 && ((Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)) ){
-                if (isCDFcut == 0 || iBin == 3 || iBin == 5){
+                // isCDFcut: 1 for CDF . 2 for LHCb . 3 for 16Aug reOptimization . 4 for sel_v3p5
+                if (isCDFcut == 0){
                     h2_nreco.Fill(gCosThetaL,gCosThetaK);
                     h_nrecoL.Fill(gCosThetaL);
                     h_nrecoK.Fill(gCosThetaK);
                 }else if (isCDFcut==1){
-                    if( (iBin < 3 && fabs(BMass-Mumumass-2.182)<0.14) || (iBin ==4 && fabs(BMass-Mumumass-1.593)<0.06) || (iBin > 5 && fabs(BMass-Mumumass-1.593)<0.06) ){
+                    if( (iBin < 3 && fabs(BMass-Mumumass-2.182)>0.16) || (iBin ==4 && fabs(BMass-Mumumass-1.593)>0.06) || (iBin > 5 && fabs(BMass-Mumumass-1.593)>0.06) ){
                         h2_nreco.Fill(gCosThetaL,gCosThetaK);
                         h_nrecoL.Fill(gCosThetaL);
                         h_nrecoK.Fill(gCosThetaK);
                     }
-                }else if (isCDFcut==2){
-                    if (BMass > 5.23 && fabs(BMass-Mumumass-2.182)>0.15 && fabs(BMass-Mumumass-1.593)>0.07){
+                }else if (isCDFcut==2 || isCDFcut==3){
+                    h2_nreco.Fill(gCosThetaL,gCosThetaK);
+                    h_nrecoL.Fill(gCosThetaL);
+                    h_nrecoK.Fill(gCosThetaK);
+                }else if (isCDFcut==4){
+                    if( fabs(BMass-Mumumass-2.182)>0.09 && fabs(BMass-Mumumass-1.593)>0.03 ){
                         h2_nreco.Fill(gCosThetaL,gCosThetaK);
                         h_nrecoL.Fill(gCosThetaL);
                         h_nrecoK.Fill(gCosThetaK);
                     }
                 }
+
             }
         }
     }
@@ -2572,7 +2489,7 @@ void angular2D_bin(int iBin, const char outfile[] = "angular2D")
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -2611,7 +2528,8 @@ void angular2D_bin(int iBin, const char outfile[] = "angular2D")
     
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, CosThetaK,CosThetaL, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    if (isCDFcut < 0) mumuMassWindowBin=0;
+    RooDataSet *data = new RooDataSet("data", "data", ch, RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, CosThetaK, CosThetaL, Triggers),TString::Format("(%s) && (%s) && (%s)", nTriggeredPath[2], q2range[iBin], mumuMassWindow[mumuMassWindowBin]), 0);
 
     // Fitting procedure in TMinuit
     double isMigradConverge[2] = {-1,0};
@@ -2775,18 +2693,18 @@ void angular2D(const char outfile[] = "angular2D", bool doFit=false) // 2D check
         yafb[ibin] = -100;
         yerrafbLo[ibin] = 0;
         yerrafbHi[ibin] = 0;
-        yfl[ibin]           = toBoundedFl(readParam(workBins[ibin],"fl_hesse2D",0));
-        yerrflLo[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse2D",0)+readParam(workBins[ibin],"fl_hesse2D",2))-yfl[ibin]);
-        yerrflHi[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse2D",0)+readParam(workBins[ibin],"fl_hesse2D",3))-yfl[ibin]);
+        yfl[ibin]           = toBoundedFl(readParam(workBins[ibin],"fl_2d",0));
+        yerrflLo[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_2d",0)+readParam(workBins[ibin],"fl_2d",2))-yfl[ibin]);
+        yerrflHi[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_2d",0)+readParam(workBins[ibin],"fl_2d",3))-yfl[ibin]);
         if (yerrflHi[ibin] == -1){
             yerrflHi[ibin] = 0;
         }
         if (yerrflLo[ibin] == -1){
             yerrflLo[ibin] = 0;
         }
-        yafb[ibin]          = toBoundedAfb(readParam(workBins[ibin],"afb_hesse2D",0),readParam(ibin,"fl_hesse2D",0));
-        yerrafbLo[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse2D",0)+readParam(workBins[ibin],"afb_hesse2D",2),readParam(workBins[ibin],"fl_hesse2D",0))-yafb[ibin]);
-        yerrafbHi[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse2D",0)+readParam(workBins[ibin],"afb_hesse2D",3),readParam(workBins[ibin],"fl_hesse2D",0))-yafb[ibin]);
+        yafb[ibin]          = toBoundedAfb(readParam(workBins[ibin],"afb_2d",0),readParam(ibin,"fl_2d",0));
+        yerrafbLo[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_2d",0)+readParam(workBins[ibin],"afb_2d",2),readParam(workBins[ibin],"fl_2d",0))-yafb[ibin]);
+        yerrafbHi[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_2d",0)+readParam(workBins[ibin],"afb_2d",3),readParam(workBins[ibin],"fl_2d",0))-yafb[ibin]);
         if (yerrafbHi[ibin] == -1){
             yerrafbHi[ibin] = 0;
         }
@@ -2859,7 +2777,7 @@ void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool ke
     ch->SetBranchStatus("Mumumasserr"   , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
@@ -2884,6 +2802,7 @@ void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool ke
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
+    if (isCDFcut < 0) mumuMassWindowBin =0;
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr,Triggers),TString::Format("(%s) && (%s) && (%s)", nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     RooFitResult *f_fitresult = f.fitTo(*data,Extended(kTRUE),Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
 
@@ -2978,7 +2897,7 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     ch->SetBranchStatus("Mumumasserr"   , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
@@ -3022,6 +2941,9 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     bkgM_frac2.setConstant(kTRUE);
     bkgGauss2_mean2.setConstant(kTRUE);
     bkgGauss2_sigma2.setConstant(kTRUE);
+    nbkgPeakMBifur.setVal(0);
+    nbkgPeakMBifur.setConstant(kTRUE);
+    bkgBifurGauss_Rsigma.setConstant(kTRUE);
     if (strcmp(decmode,"jpsi")==0){
         switch (iBin) {
             case 2:
@@ -3080,6 +3002,7 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
+    if (isCDFcut < 0) mumuMassWindowBin =0;
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr,Triggers),TString::Format("(%s) && (%s) && (%s)", nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     RooFitResult *f_fitresult = f_bkgPeakM12B.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Extended(),Minos(kTRUE));
 
@@ -3089,7 +3012,7 @@ void angular3D_1b_YpPm(int iBin, const char outfile[] = "angular3D_1b_YpPm", boo
     data->plotOn(frame,Binning(20)); 
     f_bkgPeakM12B.plotOn(frame,LineColor(1)); 
     f_bkgPeakM12B.plotOn(frame,Components(*f),LineColor(4),LineWidth(2),LineStyle(2)); 
-    f_bkgPeakM12B.plotOn(frame,Components(f_bkgPeakMBifur),LineColor(2),LineWidth(2),LineStyle(2)); 
+    //f_bkgPeakM12B.plotOn(frame,Components(f_bkgPeakMBifur),LineColor(2),LineWidth(2),LineStyle(2)); 
 
     frame->SetTitle("");
     frame->SetMinimum(0);
@@ -3190,7 +3113,7 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -3228,18 +3151,17 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
     TString f_bkgPeakK_format = TString::Format("1+bkg%sPeak_c1*CosThetaK+bkg%sPeak_c2*CosThetaK**2+bkg%sPeak_c3*CosThetaK**3+bkg%sPeak_c4*CosThetaK**4",decmode,decmode,decmode,decmode);
     TString f_bkgPeakL_format = TString::Format("1+bkg%sPeak_c5*CosThetaL+bkg%sPeak_c6*CosThetaL**2+bkg%sPeak_c7*CosThetaL**3+bkg%sPeak_c8*CosThetaL**4",decmode,decmode,decmode,decmode);
     TString f_bkgPeakA_format = TString::Format("(%s)*(%s)",f_bkgPeakK_format.Data(),f_bkgPeakL_format.Data());
+    bkgPeak_c3.setVal(0.);
+    bkgPeak_c4.setVal(0.);
     bkgPeak_c7.setVal(0.);
     bkgPeak_c8.setVal(0.);
+    bkgPeak_c3.setConstant(kTRUE);
+    bkgPeak_c4.setConstant(kTRUE);
     bkgPeak_c7.setConstant(kTRUE);
     bkgPeak_c8.setConstant(kTRUE);
 
     if (strcmp(decmode,"jpsi")==0){
         switch (iBin) {
-            case 4:
-                // 4th order in CosThetaL doesn't look better.
-                bkgPeak_c4.setVal(0.);
-                bkgPeak_c4.setConstant(kTRUE);
-                break;
             case 5:
             case 6:
             case 9:
@@ -3279,7 +3201,8 @@ void angular3D_2a_PkPl(int iBin, const char outfile[] = "angular3D_2a_PkPl", boo
     // Get data
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, CosThetaK, CosThetaL ,Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    if (isCDFcut < 0) mumuMassWindowBin = 0;
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, CosThetaK, Bmass, CosThetaL ,Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     f_bkgPeakL.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
     f_bkgPeakK.fitTo(*data,Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE));
     bkgPeak_c1.setConstant(kTRUE);
@@ -3411,7 +3334,7 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -3420,8 +3343,8 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
     RooRealVar Triggers("Triggers","",0,100);
 
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5) mumuMassWindowBin = 0;
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (Bmass > 5.38 || Bmass < 5.18)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
+    if (iBin==3 || iBin==5 || isCDFcut < 0 ) mumuMassWindowBin = 0;
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s) && (Bmass > 5.38 || Bmass < 5.18)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     if (data->sumEntries() == 0){
         return;
     }
@@ -3502,7 +3425,9 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
             f_bkgCombK_argset.add(RooArgSet(bkgCombK_c4));
             break;
         case 3:
+        case 4:
         case 5:
+        case 9:
             f_bkgCombL_format = "1+bkgCombL_c1*CosThetaL+bkgCombL_c2*CosThetaL**2+bkgCombL_c3*CosThetaL**3+bkgCombL_c4*CosThetaL**4";
             f_bkgCombL_argset.add(RooArgSet(bkgCombL_c1));
             f_bkgCombL_argset.add(RooArgSet(bkgCombL_c2));
@@ -3514,9 +3439,7 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
             f_bkgCombK_argset.add(RooArgSet(bkgCombK_c3));
             f_bkgCombK_argset.add(RooArgSet(bkgCombK_c4));
             break;
-        case 4:
         case 6:
-        case 9:
             f_bkgCombL_format = "exp(-0.5*((CosThetaL-bkgCombL_c1)/bkgCombL_c2)**2)";
             f_bkgCombL_argset.add(RooArgSet(bkgCombL_c1));
             f_bkgCombL_argset.add(RooArgSet(bkgCombL_c2));
@@ -3588,31 +3511,32 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
     switch(iBin){
         case 0:
         case 1:
+        case 2:
         case 3:
         case 5:
+        case 6:
         case 7:
         case 8:
+        case 9:
             nbkgjpsiPeak.setVal(0.);
             nbkgpsi2sPeak.setVal(0.);
             nbkgjpsiPeak.setConstant(kTRUE);
             nbkgpsi2sPeak.setConstant(kTRUE);
             f = new RooAddPdf("kernel","kernel",RooArgList(f_bkgCombA,f_bkgCombA_dummy),RooArgList(nbkgComb,nbkgjpsiPeak));
             break;
-        case 2:
         case 10:
             nbkgjpsiPeak.setVal(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*scaleFactor);
             nbkgjpsiPeak.setError(nbkgjpsiPeak_MC->getError()*datasetLumi[0]/datasetLumi[2]*scaleFactor);
             f = new RooAddPdf("kernel","kernel",RooArgList(f_bkgCombA,*f_bkgjpsiPeakA),RooArgList(nbkgComb,nbkgjpsiPeak));
             break;
+        //case 4:
+        //    nbkgjpsiPeak.setVal(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*scaleFactor);
+        //    nbkgjpsiPeak.setError(nbkgjpsiPeak_MC->getError()*datasetLumi[0]/datasetLumi[2]*sqrt(scaleFactor));
+        //    nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*scaleFactor);
+        //    nbkgpsi2sPeak.setError(nbkgpsi2sPeak_MC->getError()*datasetLumi[0]/datasetLumi[3]*sqrt(scaleFactor));
+        //    f = new RooAddPdf("kernel","kernel",RooArgList(f_bkgCombA,*f_bkgjpsiPeakA,*f_bkgpsi2sPeakA),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak));
+        //    break;
         case 4:
-            nbkgjpsiPeak.setVal(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*scaleFactor);
-            nbkgjpsiPeak.setError(nbkgjpsiPeak_MC->getError()*datasetLumi[0]/datasetLumi[2]*sqrt(scaleFactor));
-            nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*scaleFactor);
-            nbkgpsi2sPeak.setError(nbkgpsi2sPeak_MC->getError()*datasetLumi[0]/datasetLumi[3]*sqrt(scaleFactor));
-            f = new RooAddPdf("kernel","kernel",RooArgList(f_bkgCombA,*f_bkgjpsiPeakA,*f_bkgpsi2sPeakA),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak));
-            break;
-        case 6:
-        case 9:
             nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*scaleFactor);
             nbkgpsi2sPeak.setError(nbkgpsi2sPeak_MC->getError()*datasetLumi[0]/datasetLumi[3]*sqrt(scaleFactor));
             f = new RooAddPdf("kernel","kernel",RooArgList(f_bkgCombA,*f_bkgpsi2sPeakA),RooArgList(nbkgComb,nbkgpsi2sPeak));
@@ -3629,11 +3553,12 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
         case 10:
             gausConstraints.add(RooArgSet(gaus_nbkgjpsiPeak));
             break;
+        //case 4:
+        //    gausConstraints.add(RooArgSet(gaus_nbkgjpsiPeak,gaus_nbkgpsi2sPeak));
+        //    break;
         case 4:
-            gausConstraints.add(RooArgSet(gaus_nbkgjpsiPeak,gaus_nbkgpsi2sPeak));
-            break;
-        case 6:
-        case 9:
+        //case 6:
+        //case 9:
             gausConstraints.add(RooArgSet(gaus_nbkgpsi2sPeak));
             break;
         default:
@@ -3665,8 +3590,8 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
     data->plotOn(framecosk,Binning(20)); 
     f->plotOn(framecosk); 
     f->plotOn(framecosk,Components(f_bkgCombA),LineColor(2),LineWidth(2),LineStyle(2));
-    if ( iBin == 2 || iBin == 4 || iBin == 10)  f->plotOn(framecosk,Components(*f_bkgjpsiPeakA),LineColor(6),LineWidth(2),LineStyle(2));
-    if ( iBin == 4 || iBin == 6 || iBin == 9 )  f->plotOn(framecosk,Components(*f_bkgpsi2sPeakA),LineColor(8),LineWidth(2),LineStyle(2));
+    if ( iBin == 10)  f->plotOn(framecosk,Components(*f_bkgjpsiPeakA),LineColor(6),LineWidth(2),LineStyle(2));
+    if ( iBin == 4 )  f->plotOn(framecosk,Components(*f_bkgpsi2sPeakA),LineColor(8),LineWidth(2),LineStyle(2));
     framecosk->SetTitle("");
     framecosk->SetMinimum(0);
     framecosk->Draw();
@@ -3684,8 +3609,8 @@ void angular3D_prior(int iBin, const char outfile[] = "angular3D_prior", bool ke
     data->plotOn(framecosl,Binning(20)); 
     f->plotOn(framecosl); 
     f->plotOn(framecosl,Components(f_bkgCombA),LineColor(2),LineWidth(2),LineStyle(2));
-    if ( iBin == 2 || iBin == 4 || iBin == 10)  f->plotOn(framecosl,Components(*f_bkgjpsiPeakA),LineColor(6),LineWidth(2),LineStyle(2));
-    if ( iBin == 4 || iBin == 6 || iBin == 9 )  f->plotOn(framecosl,Components(*f_bkgpsi2sPeakA),LineColor(8),LineWidth(2),LineStyle(2));
+    if ( iBin == 10)  f->plotOn(framecosl,Components(*f_bkgjpsiPeakA),LineColor(6),LineWidth(2),LineStyle(2));
+    if ( iBin == 4 )  f->plotOn(framecosl,Components(*f_bkgpsi2sPeakA),LineColor(8),LineWidth(2),LineStyle(2));
     framecosl->SetTitle("");
     framecosl->SetMinimum(0);
     framecosl->Draw();
@@ -3754,7 +3679,7 @@ void angular2D_data_bin(int iBin, const char outfile[] = "angular2D_data")
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -3919,7 +3844,7 @@ void angular2D_data_bin(int iBin, const char outfile[] = "angular2D_data")
     
     // Get data and apply unbinned fit
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
+    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     fs  ->setConstant(kTRUE);
     as  ->setConstant(kTRUE);
@@ -4051,7 +3976,7 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -4062,7 +3987,7 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     RooProduct Bmass_norm("Bmass_norm","Bmass_norm",RooArgSet(Bmass_offset,RooConst(1./0.56)));
 
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
+    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     if (data->sumEntries() == 0){
         return;
@@ -4199,16 +4124,17 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     RooProdPdf *f_bkgjpsiPeak = 0;
     RooProdPdf *f_bkgpsi2sPeak = 0;
     switch(iBin){
-        case 2:
+        //case 2:
         case 10:
             f_bkgjpsiPeak  = new RooProdPdf("f_bkgjpsiPeak", "f_bkgjpsiPeak",RooArgSet(*f_bkgjpsiPeakA,*f_bkgjpsiPeakM12));
             break;
+        //case 4:
+        //    f_bkgjpsiPeak  = new RooProdPdf("f_bkgjpsiPeak", "f_bkgjpsiPeak",RooArgSet(*f_bkgjpsiPeakA,*f_bkgjpsiPeakM12));
+        //    f_bkgpsi2sPeak = new RooProdPdf("f_bkgpsi2sPeak", "f_bkgpsi2sPeak",RooArgSet(*f_bkgpsi2sPeakA,*f_bkgpsi2sPeakM12));
+        //    break;
+        //case 6:
+        //case 9:
         case 4:
-            f_bkgjpsiPeak  = new RooProdPdf("f_bkgjpsiPeak", "f_bkgjpsiPeak",RooArgSet(*f_bkgjpsiPeakA,*f_bkgjpsiPeakM12));
-            f_bkgpsi2sPeak = new RooProdPdf("f_bkgpsi2sPeak", "f_bkgpsi2sPeak",RooArgSet(*f_bkgpsi2sPeakA,*f_bkgpsi2sPeakM12));
-            break;
-        case 6:
-        case 9:
             f_bkgpsi2sPeak = new RooProdPdf("f_bkgpsi2sPeak", "f_bkgpsi2sPeak",RooArgSet(*f_bkgpsi2sPeakA,*f_bkgpsi2sPeakM12));
             break;
         default:
@@ -4229,7 +4155,7 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     RooAddPdf *fA = 0;
     RooAddPdf *f = 0;
     switch(iBin){
-        case 2:
+        //case 2:
         case 10:
             nbkgpsi2sPeak.setVal(0.);
             nbkgpsi2sPeak.setConstant(kTRUE);
@@ -4239,18 +4165,18 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
             fA = new RooAddPdf("","kernelA",RooArgList(*f_bkgCombA,*f_bkgjpsiPeakA,*f_sigA),RooArgList(nbkgComb,nbkgjpsiPeak,nsig));
             f  = new RooAddPdf("kernel","kernel",RooArgList(f_bkgComb,*f_bkgjpsiPeak,f_sig),RooArgList(nbkgComb,nbkgjpsiPeak,nsig));
             break;
+        //case 4:
+        //    nbkgjpsiPeak.setVal(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor);
+        //    nbkgjpsiPeak.setError(nbkgjpsiPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor));
+        //    nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor);
+        //    nbkgpsi2sPeak.setError(nbkgpsi2sPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor));
+        //    fM = new RooAddPdf("kernelM","kernelM",RooArgList(f_bkgCombM,*f_bkgjpsiPeakM12,*f_bkgpsi2sPeakM12,*f_sigM),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
+        //    fA = new RooAddPdf("","kernelA",RooArgList(*f_bkgCombA,*f_bkgjpsiPeakA,*f_bkgpsi2sPeakA,*f_sigA),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
+        //    f  = new RooAddPdf("kernel","kernel",RooArgList(f_bkgComb,*f_bkgjpsiPeak,*f_bkgpsi2sPeak,f_sig),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
+        //    break;
+        //case 6:
+        //case 9:
         case 4:
-            nbkgjpsiPeak.setVal(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor);
-            nbkgjpsiPeak.setError(nbkgjpsiPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor));
-            nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor);
-            nbkgpsi2sPeak.setError(nbkgpsi2sPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor));
-
-            fM = new RooAddPdf("kernelM","kernelM",RooArgList(f_bkgCombM,*f_bkgjpsiPeakM12,*f_bkgpsi2sPeakM12,*f_sigM),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
-            fA = new RooAddPdf("","kernelA",RooArgList(*f_bkgCombA,*f_bkgjpsiPeakA,*f_bkgpsi2sPeakA,*f_sigA),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
-            f  = new RooAddPdf("kernel","kernel",RooArgList(f_bkgComb,*f_bkgjpsiPeak,*f_bkgpsi2sPeak,f_sig),RooArgList(nbkgComb,nbkgjpsiPeak,nbkgpsi2sPeak,nsig));
-            break;
-        case 6:
-        case 9:
             nbkgjpsiPeak.setVal(0.);
             nbkgjpsiPeak.setConstant(kTRUE);
             nbkgpsi2sPeak.setVal(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor);
@@ -4283,16 +4209,17 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     RooGaussian *gaus_nbkgjpsiPeak = 0;
     RooGaussian *gaus_nbkgpsi2sPeak = 0;
     switch(iBin){
-        case 2:
+        //case 2:
         case 10:
             gaus_nbkgjpsiPeak = new RooGaussian("gaus_nbkgjpsiPeak","gaus_nbkgjpsiPeak",nbkgjpsiPeak,RooConst(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor),RooConst(nbkgjpsiPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor)));
             break;
+        //case 4:
+        //    gaus_nbkgjpsiPeak = new RooGaussian("gaus_nbkgjpsiPeak","gaus_nbkgjpsiPeak",nbkgjpsiPeak,RooConst(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor),RooConst(nbkgjpsiPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor)));
+        //    gaus_nbkgpsi2sPeak = new RooGaussian("gaus_nbkgpsi2sPeak","gaus_nbkgpsi2sPeak",nbkgpsi2sPeak,RooConst(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor),RooConst(nbkgpsi2sPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor)));
+        //    break;
+        //case 6:
+        //case 9:
         case 4:
-            gaus_nbkgjpsiPeak = new RooGaussian("gaus_nbkgjpsiPeak","gaus_nbkgjpsiPeak",nbkgjpsiPeak,RooConst(nbkgjpsiPeak_MC->getVal()*datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor),RooConst(nbkgjpsiPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[2]*jpsiScaleFactor)));
-            gaus_nbkgpsi2sPeak = new RooGaussian("gaus_nbkgpsi2sPeak","gaus_nbkgpsi2sPeak",nbkgpsi2sPeak,RooConst(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor),RooConst(nbkgpsi2sPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor)));
-            break;
-        case 6:
-        case 9:
             gaus_nbkgpsi2sPeak = new RooGaussian("gaus_nbkgpsi2sPeak","gaus_nbkgpsi2sPeak",nbkgpsi2sPeak,RooConst(nbkgpsi2sPeak_MC->getVal()*datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor),RooConst(nbkgpsi2sPeak_MC->getError()*sqrt(datasetLumi[0]/datasetLumi[3]*psi2sScaleFactor)));
             break;
         default:
@@ -4301,15 +4228,16 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     
     RooArgSet gausConstraints(gaus_sigGauss_mean,gaus_sigGauss1_sigma,gaus_sigGauss2_sigma,gaus_sigM_frac);
     switch(iBin){
-        case 2:
+        //case 2:
         case 10:
             gausConstraints.add(RooArgSet(*gaus_nbkgjpsiPeak));
             break;
+        //case 4:
+        //    gausConstraints.add(RooArgSet(*gaus_nbkgjpsiPeak,*gaus_nbkgpsi2sPeak));
+        //    break;
+        //case 6:
+        //case 9:
         case 4:
-            gausConstraints.add(RooArgSet(*gaus_nbkgjpsiPeak,*gaus_nbkgpsi2sPeak));
-            break;
-        case 6:
-        case 9:
             gausConstraints.add(RooArgSet(*gaus_nbkgpsi2sPeak));
             break;
         default:
@@ -4410,8 +4338,8 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     f->plotOn(framemass,LineColor(1));
     f->plotOn(framemass,Components(f_sig),LineColor(4),LineWidth(2));
     f->plotOn(framemass,Components(f_bkgComb),LineColor(2),LineWidth(2),LineStyle(2));
-    if (iBin == 2 || iBin == 4 || iBin == 10)f->plotOn(framemass,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
-    if (iBin == 6 || iBin == 4 || iBin == 9 )f->plotOn(framemass,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
+    if ( iBin == 10)f->plotOn(framemass,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
+    if ( iBin == 4 )f->plotOn(framemass,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
 
     framemass->SetTitle("");
     framemass->SetMinimum(0);
@@ -4424,18 +4352,19 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     t1->DrawLatex(.35,.86+fixNDC,TString::Format("%s",q2rangeLatex[iBin]));
     t1->DrawLatex(.6,.79+fixNDC,TString::Format("Y_{Signal}=%.3f#pm%.3f",nsig.getVal(),nsig.getError()));
     switch(iBin){
-        case 2:
+        //case 2:
         case 10:
             t1->DrawLatex(.6,.72+fixNDC,TString::Format("Y_{J/#Psi}=%.3f#pm%.3f",nbkgjpsiPeak.getVal(),nbkgjpsiPeak.getError()));
             t1->DrawLatex(.6,.65+fixNDC,TString::Format("Y_{Comb}=%.3f#pm%.3f",nbkgComb.getVal(),nbkgComb.getError()));
             break;
+        //case 4:
+        //    t1->DrawLatex(.6,.72+fixNDC,TString::Format("Y_{J/#Psi}=%.3f#pm%.3f",nbkgjpsiPeak.getVal(),nbkgjpsiPeak.getError()));
+        //    t1->DrawLatex(.6,.65+fixNDC,TString::Format("Y_{#Psi'}=%.3f#pm%.3f",nbkgpsi2sPeak.getVal(),nbkgpsi2sPeak.getError()));
+        //    t1->DrawLatex(.6,.58+fixNDC,TString::Format("Y_{Comb}=%.3f#pm%.3f",nbkgComb.getVal(),nbkgComb.getError()));
+        //    break;
+        //case 6:
+        //case 9:
         case 4:
-            t1->DrawLatex(.6,.72+fixNDC,TString::Format("Y_{J/#Psi}=%.3f#pm%.3f",nbkgjpsiPeak.getVal(),nbkgjpsiPeak.getError()));
-            t1->DrawLatex(.6,.65+fixNDC,TString::Format("Y_{#Psi'}=%.3f#pm%.3f",nbkgpsi2sPeak.getVal(),nbkgpsi2sPeak.getError()));
-            t1->DrawLatex(.6,.58+fixNDC,TString::Format("Y_{Comb}=%.3f#pm%.3f",nbkgComb.getVal(),nbkgComb.getError()));
-            break;
-        case 6:
-        case 9:
             t1->DrawLatex(.6,.72+fixNDC,TString::Format("Y_{#Psi'}=%.3f#pm%.3f",nbkgpsi2sPeak.getVal(),nbkgpsi2sPeak.getError()));
             t1->DrawLatex(.6,.65+fixNDC,TString::Format("Y_{Comb}=%.3f#pm%.3f",nbkgComb.getVal(),nbkgComb.getError()));
             break;
@@ -4453,8 +4382,8 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     f->plotOn(framecosk,LineColor(1)); 
     f->plotOn(framecosk,Components(f_sig),LineColor(4),LineWidth(2));
     f->plotOn(framecosk,Components(f_bkgComb),LineColor(2),LineWidth(2),LineStyle(2));
-    if (iBin == 2 || iBin == 4 || iBin == 10)f->plotOn(framecosk,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
-    if (iBin == 4 || iBin == 6 || iBin == 9 )f->plotOn(framecosk,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
+    if (iBin == 10)f->plotOn(framecosk,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
+    if (iBin == 4 )f->plotOn(framecosk,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
 
     framecosk->SetTitle("");
     framecosk->SetMinimum(0);
@@ -4473,8 +4402,8 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     f->plotOn(framecosl,LineColor(1)); 
     f->plotOn(framecosl,Components(f_sig),LineColor(4),LineWidth(2));
     f->plotOn(framecosl,Components(f_bkgComb),LineColor(2),LineWidth(2),LineStyle(2));
-    if (iBin == 2 || iBin == 4 || iBin == 10)f->plotOn(framecosl,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
-    if (iBin == 6 || iBin == 4 || iBin == 9)f->plotOn(framecosl,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
+    if ( iBin == 10)f->plotOn(framecosl,Components(*f_bkgjpsiPeak),LineColor(6),LineWidth(2),LineStyle(2));
+    if ( iBin == 4 )f->plotOn(framecosl,Components(*f_bkgpsi2sPeak),LineColor(8),LineWidth(2),LineStyle(2));
 
     framecosl->SetTitle("");
     framecosl->SetMinimum(0);
@@ -4677,7 +4606,7 @@ void scanNLL(int iBin, const char outfile[] = "scanNLL")
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -4685,7 +4614,7 @@ void scanNLL(int iBin, const char outfile[] = "scanNLL")
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Triggers("Triggers","",0,100);
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
+    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
     // Load f from wspace_angular3D_bin and datacard
@@ -4982,7 +4911,7 @@ double getNLL(int iBin, double testFl, double testAfb, bool unboundedArg=false, 
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -4990,7 +4919,7 @@ double getNLL(int iBin, double testFl, double testAfb, bool unboundedArg=false, 
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Triggers("Triggers","",0,100);
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5) mumuMassWindowBin = 0; // no cut
+    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
 
     // Load f from wspace_angular3D_bin and datacard
@@ -5526,7 +5455,7 @@ void rndEfficiencyMapTester()
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.,5.56);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -5537,7 +5466,7 @@ void rndEfficiencyMapTester()
     RooProduct Bmass_norm("Bmass_norm","Bmass_norm",RooArgSet(Bmass_offset,RooConst(1./0.56)));
 
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==4 || iBin==6) mumuMassWindowBin = 0; // no cut
+    if (iBin==4 || iBin==6 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Triggers),TString::Format("(%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin]),0);
     if (data->sumEntries() == 0){
         return;
@@ -5639,6 +5568,8 @@ void getToyFromUnfilterGen(int iBin) // For validation, DEPRECATED.
     TRandom3 *rndGenerator = new TRandom3();
     do {
         treein->GetEntry(_entry); _entry++;
+        if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
+        if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
         if (gQ2 > q2rangedn[iBin] && gQ2 < q2rangeup[iBin]) {
             if (rndGenerator->Rndm() < f2_model.Eval(gCosThetaL,gCosThetaK)) {
                 Q2 = gQ2;
@@ -6041,7 +5972,6 @@ void genToyPeakBkgFromWspace(int iBin, int scaleFactor = 1)
     int nbkgjpsiPeakInToy = 0;
     int nbkgpsi2sPeakInToy = 0;
     switch(iBin){
-        case 2:
         case 10:
             gaus_nbkgjpsiPeak = (RooGaussian*)wspace->pdf("gaus_nbkgjpsiPeak");
             nbkgjpsiPeakDataset = gaus_nbkgjpsiPeak->generate(nbkgjpsiPeak,1);
@@ -6049,17 +5979,6 @@ void genToyPeakBkgFromWspace(int iBin, int scaleFactor = 1)
             genToyPeakBkgFromWspace(iBin,nbkgjpsiPeakInToy,"jpsi");
             break;
         case 4:
-            gaus_nbkgjpsiPeak = (RooGaussian*)wspace->pdf("gaus_nbkgjpsiPeak");
-            gaus_nbkgpsi2sPeak = (RooGaussian*)wspace->pdf("gaus_nbkgpsi2sPeak");
-            nbkgjpsiPeakDataset = gaus_nbkgjpsiPeak->generate(nbkgjpsiPeak,1);
-            nbkgpsi2sPeakDataset = gaus_nbkgpsi2sPeak->generate(nbkgpsi2sPeak,1);
-            nbkgjpsiPeakInToy=((RooRealVar*)(nbkgjpsiPeakDataset->get(0))->find("nbkgjpsiPeak"))->getVal()*scaleFactor;
-            nbkgpsi2sPeakInToy=((RooRealVar*)(nbkgpsi2sPeakDataset->get(0))->find("nbkgpsi2sPeak"))->getVal()*scaleFactor;
-            genToyPeakBkgFromWspace(iBin,nbkgjpsiPeakInToy,"jpsi");
-            genToyPeakBkgFromWspace(iBin,nbkgpsi2sPeakInToy,"psi2s");
-            break;
-        case 6:
-        case 9:
             gaus_nbkgpsi2sPeak = (RooGaussian*)wspace->pdf("gaus_nbkgpsi2sPeak");
             nbkgpsi2sPeakDataset = gaus_nbkgpsi2sPeak->generate(nbkgpsi2sPeak,1);
             nbkgpsi2sPeakInToy=((RooRealVar*)(nbkgpsi2sPeakDataset->get(0))->find("nbkgpsi2sPeak"))->getVal()*scaleFactor;
@@ -6098,9 +6017,11 @@ void splitMCSamples(double oLumis=datasetLumi[0]) // Split MC samples into small
         return;
     }
 
+    int mumuMassWindowBin = 1+2*abs(isCDFcut);
+    //if (isCDFcut < 0) mumuMassWindowBin = 0;
     for(int iPart=0; iPart < floor(iLumis/oLumis); iPart++){
         TFile *fout = new TFile(TString::Format("%s/splitMC_%s_part%04d.root",owspacepath.Data(),decmode,iPart+1), "RECREATE");
-        TTree *tout = ch->CopyTree("","",(int)floor(oLumis/iLumis*ch->GetEntries()),iPart*(int)floor(oLumis/iLumis*ch->GetEntries()));
+        TTree *tout = ch->CopyTree("","",(int)floor(oLumis/iLumis*ch->GetEntries()),iPart*(int)floor(oLumis/iLumis*ch->GetEntries()))->CopyTree(mumuMassWindow[mumuMassWindowBin]);
         fout->Write();
         fout->Close();
     }
@@ -6168,6 +6089,7 @@ void rndPickMCSamples(int nSets = 1, double oLumis=datasetLumi[0]) // Pick disti
 
     int nEntries = ch->GetEntries();
     int nEvtsPerSet = floor(oLumis/iLumis*nEntries);
+    int mumuMassWindowBin = 1+2*abs(isCDFcut);
     for(int iSet=0; iSet< nSets; iSet++){
         TFile *fout = new TFile(TString::Format("%s/rndMC_%s_%devts_set%d.root",owspacepath.Data(),decmode,nEvtsPerSet,iSet+1), "RECREATE");
         TTree *tout = ch->CloneTree(0);
@@ -6186,6 +6108,7 @@ void rndPickMCSamples(int nSets = 1, double oLumis=datasetLumi[0]) // Pick disti
             ch->GetEntry(candEvtId);
             tout->Fill();
         }
+        tout = tout->CopyTree("mumuMassWindow[mumuMassWindowBin]");
         tout->FlushBaskets();
         tout->AutoSave();
         fout->Write();
@@ -6233,12 +6156,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
             gaus_nbkgjpsiPeak = (RooGaussian*)wspace->pdf("gaus_nbkgjpsiPeak");
             break;
         case 4:
-            gaus_nbkgjpsiPeak = (RooGaussian*)wspace->pdf("gaus_nbkgjpsiPeak");
-            gaus_nbkgpsi2sPeak = (RooGaussian*)wspace->pdf("gaus_nbkgpsi2sPeak");
-            gaus_nbkgjpsiPeak->Print();
-            break;
-        case 6:
-        case 9:
             gaus_nbkgpsi2sPeak = (RooGaussian*)wspace->pdf("gaus_nbkgpsi2sPeak");
             break;
         default:
@@ -6263,11 +6180,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
             nbkgjpsiPeakDataset = gaus_nbkgjpsiPeak->generate(nbkgjpsiPeak,nToy);
             break;
         case 4:
-            nbkgjpsiPeakDataset = gaus_nbkgjpsiPeak->generate(nbkgjpsiPeak,nToy);
-            nbkgpsi2sPeakDataset = gaus_nbkgpsi2sPeak->generate(nbkgpsi2sPeak,nToy);
-            break;
-        case 6:
-        case 9:
             nbkgpsi2sPeakDataset = gaus_nbkgpsi2sPeak->generate(nbkgpsi2sPeak,nToy);
             break;
         default:
@@ -6283,12 +6195,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
                 nbkgjpsiPeakInToys+=nbkgjpsiPeakInToy[iToy];
                 break;
             case 4:
-                nbkgjpsiPeakInToy[iToy]=((RooRealVar*)(nbkgjpsiPeakDataset->get(iToy))->find("nbkgjpsiPeak"))->getVal();
-                nbkgpsi2sPeakInToy[iToy]=((RooRealVar*)(nbkgpsi2sPeakDataset->get(iToy))->find("nbkgpsi2sPeak"))->getVal();
-                nbkgjpsiPeakInToys+=nbkgjpsiPeakInToy[iToy];
-                nbkgpsi2sPeakInToys+=nbkgpsi2sPeakInToy[iToy];
-            case 6:
-            case 9:
                 nbkgpsi2sPeakInToy[iToy]=((RooRealVar*)(nbkgpsi2sPeakDataset->get(iToy))->find("nbkgpsi2sPeak"))->getVal();
                 nbkgpsi2sPeakInToys+=nbkgpsi2sPeakInToy[iToy];
                 break;
@@ -6326,13 +6232,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
                 splitToySamples(TString::Format("%s/jpsiPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgjpsiPeakInToy,TString::Format("jpsiPeakToy_Bin%d",iBin).Data());
                 break;
             case 4:
-                genToyPeakBkgFromWspace(iBin, nbkgjpsiPeakInToys,"jpsi");
-                genToyPeakBkgFromWspace(iBin, nbkgpsi2sPeakInToys,"psi2s");
-                splitToySamples(TString::Format("%s/jpsiPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgjpsiPeakInToy,TString::Format("jpsiPeakToy_Bin%d",iBin).Data());
-                splitToySamples(TString::Format("%s/psi2sPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgpsi2sPeakInToy,TString::Format("psi2sPeakToy_Bin%d",iBin).Data());
-                break;
-            case 6:
-            case 9:
                 genToyPeakBkgFromWspace(iBin, nbkgpsi2sPeakInToys,"psi2s");
                 splitToySamples(TString::Format("%s/psi2sPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgpsi2sPeakInToy,TString::Format("psi2sPeakToy_Bin%d",iBin).Data());
                 break;
@@ -6354,13 +6253,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
                            TString::Format("%s/set%04d/jpsiPeakToy_Bin%d_set%04d.root"  ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
                     break;
                 case 4:
-                    rename(TString::Format("%s/jpsiPeakToy_Bin%d_set%04d.root"          ,owspacepath.Data(),       iBin,iToy+1).Data(),
-                           TString::Format("%s/set%04d/jpsiPeakToy_Bin%d_set%04d.root"  ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
-                    rename(TString::Format("%s/psi2sPeakToy_Bin%d_set%04d.root"         ,owspacepath.Data(),       iBin,iToy+1).Data(),
-                           TString::Format("%s/set%04d/psi2sPeakToy_Bin%d_set%04d.root" ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
-                    break;
-                case 6:
-                case 9:
                     rename(TString::Format("%s/psi2sPeakToy_Bin%d_set%04d.root"         ,owspacepath.Data(),       iBin,iToy+1).Data(),
                            TString::Format("%s/set%04d/psi2sPeakToy_Bin%d_set%04d.root" ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
                     break;
@@ -6395,13 +6287,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
                     splitToySamples(TString::Format("%s/jpsiPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgjpsiPeakInToy,TString::Format("jpsiPeakToy_Bin%d",iBin).Data());
                     break;
                 case 4:
-                    genToyPeakBkgFromWspace(iBin, nbkgjpsiPeakInToys,"jpsi");
-                    genToyPeakBkgFromWspace(iBin, nbkgpsi2sPeakInToys,"psi2s");
-                    splitToySamples(TString::Format("%s/jpsiPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgjpsiPeakInToy,TString::Format("jpsiPeakToy_Bin%d",iBin).Data());
-                    splitToySamples(TString::Format("%s/psi2sPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgpsi2sPeakInToy,TString::Format("psi2sPeakToy_Bin%d",iBin).Data());
-                    break;
-                case 6:
-                case 9:
                     genToyPeakBkgFromWspace(iBin, nbkgpsi2sPeakInToys,"psi2s");
                     splitToySamples(TString::Format("%s/psi2sPeakToy_Bin%d.root",owspacepath.Data(),iBin).Data(),nToy,nbkgpsi2sPeakInToy,TString::Format("psi2sPeakToy_Bin%d",iBin).Data());
                     break;
@@ -6423,13 +6308,6 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
                                TString::Format("%s/set%04d/jpsiPeakToy_Bin%d_set%04d.root"  ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
                         break;
                     case 4:
-                        rename(TString::Format("%s/jpsiPeakToy_Bin%d_set%04d.root"          ,owspacepath.Data(),       iBin,iToy+1).Data(),
-                               TString::Format("%s/set%04d/jpsiPeakToy_Bin%d_set%04d.root"  ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
-                        rename(TString::Format("%s/psi2sPeakToy_Bin%d_set%04d.root"         ,owspacepath.Data(),       iBin,iToy+1).Data(),
-                               TString::Format("%s/set%04d/psi2sPeakToy_Bin%d_set%04d.root" ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
-                        break;
-                    case 6:
-                    case 9:
                         rename(TString::Format("%s/psi2sPeakToy_Bin%d_set%04d.root"         ,owspacepath.Data(),       iBin,iToy+1).Data(),
                                TString::Format("%s/set%04d/psi2sPeakToy_Bin%d_set%04d.root" ,owspacepath.Data(),iToy+1,iBin,iToy+1).Data());
                         break;
@@ -6493,7 +6371,7 @@ void printHelpMessage(){
     printf("    --odatacardpath       Path to output datacards.                           [ Default: \".\" ]\n");
     printf("    --iallpath            Path to input  datacards/wspaces.                   [ Default: \".\" ]\n");
     printf("    --oallpath            Path to output plots/datacards/wspaces.             [ Default: \".\" ]\n");
-    printf("    --scale               Modify the scale factor of input data               [ Default: 1 ]\n");
+    printf("    --scale               Modify the scale factor of input. Negative for toys.[ Default: 1 ]\n");
     printf("Remark             :\n");
     printf("    1. Outputs will be by default stored in ./plots, please keep the directory.\n");
     printf("    2. Wildcard is allowed for infile. But you must quote infile like \"inputData_Run*.root\"!\n");
@@ -6505,7 +6383,9 @@ int main(int argc, char** argv) {
 
     // Tags
     is7TeVCheck = false;   
-    isCDFcut = 2;// 1 for CDF . 2 for LHCb
+    // less than 0 noCut, 1 for CDF . 2 for LHCb . 3 for 16Aug reOptimization . 4 for sel_v3p5
+    isToy = false;
+    isToy ? isCDFcut*=-1 : isCDFcut=4;
     int nToy=500;
     int nWorkBins = 3;
     int workBins[] = {10,4,9};
@@ -6595,6 +6475,10 @@ int main(int argc, char** argv) {
             case 9:
                 l_opt_arg = optarg;
                 scaleFactor=atof(l_opt_arg);
+                if (scaleFactor < 0){
+                    isToy=true;
+                    scaleFactor=fabs(scaleFactor);
+                }
                 break;
             default:
                 printf("WARNING\t\t: %d is not a valid argument. Program terminates!\n",arg);
@@ -6609,7 +6493,7 @@ int main(int argc, char** argv) {
     if (func == "bmass") {
         if (argc != 4){
             printf("./fit bmass infile binID\n");
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < nQ2Ranges; i++) {
                 printf("    Bin %d : %s\n",i,q2range[i]);
             }
             return 0;
@@ -6635,8 +6519,8 @@ int main(int argc, char** argv) {
 
         ch->Add(infile.Data());
         if (ch == NULL) return 1;
-        int nTempWorkBins = 9;
-        int tempWorkBins[] = {0,1,2,4,6,7,8,9,10};
+        int nTempWorkBins = 3;
+        int tempWorkBins[] = {4,9,10};
         //int nTempWorkBins = 1;
         //int tempWorkBins[] = {10};
         for (int iBin = 0; iBin < nTempWorkBins; iBin++) {
@@ -6750,20 +6634,21 @@ int main(int argc, char** argv) {
         harvestFCFitResults(whichBin,nToy);
         getFCInterval(whichBin,nToy);
     }else if (func == "createToys"){
-        ch->Add(infile.Data());
-        if (ch == NULL) return 1;
-
-        double expNCombBkg[11] = { 0 , 0  , 400 , 0  , 100 , 0  , 70 , 100 , 140 , 240   ,400};
-        int    expNSig[11]     = {10 , 10 , 20  , 30 , 50  , 30 , 20 , 20  , 40  , 40    , 40};
         scaleFactor = 100;
+        
+        double expNCombBkg[nQ2Ranges] = { 0 , 0 , 0 , 0 , 65.7 , 0 , 0 , 0 , 0 , 56.4 , 130.6 , 0 , 0};
+        int    expNSig[nQ2Ranges]     = { 0 , 0 , 0 , 0 , 21   , 0 , 0 , 0 , 0 , 39   , 27    , 0 , 0};
         double scaledNorm = scaleFactor*datasetLumi[0];
         for (int iBin = 0; iBin < nWorkBins; iBin++) {
-            genToySignal(workBins[iBin],expNSig[workBins[iBin]]*scaleFactor);// (iBin, nEvts)
-            genToyCombBkg(workBins[iBin],expNCombBkg[workBins[iBin]]*scaleFactor,"combBkgToy");
-            genToyPeakBkgFromWspace(workBins[iBin], (int)scaleFactor);// (iBin, scaleFactor)
+            //genToySignal(workBins[iBin],expNSig[workBins[iBin]]*scaleFactor);// (iBin, nEvts)
+            //genToyCombBkg(workBins[iBin],expNCombBkg[workBins[iBin]]*scaleFactor,"combBkgToy");
+            //genToyPeakBkgFromWspace(workBins[iBin], (int)scaleFactor);// (iBin, scaleFactor)
         }
+
+        ch->Add(infile.Data());
+        if (ch == NULL) return 1;
+        splitMCSamples();
         //rndPickMCSamples(scaleFactor);// (nSets,lumis)
-        //splitMCSamples();
     }else if (func == "test"){
         ch->Add(infile.Data());
         printListOfTChainElements(ch);
