@@ -40,6 +40,8 @@
 #include <TLorentzVector.h>
 #include <TVectorD.h>
 #include <TMatrixD.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 
 #include <RooConstVar.h>
 #include <RooRealVar.h>
@@ -4521,11 +4523,11 @@ void angular3D(const char outfile[] = "angular3D")
         yfl[ibin]           = toBoundedFl(ubd_fl);
         yafb[ibin]          = toBoundedAfb(ubd_afb, ubd_fl);
 
-        // errors from Feldman-Cousins method
-        //yerrflLo[ibin] = -1*readParam(workBins[ibin],"FCErrFl",0);
-        //yerrflHi[ibin] = readParam(workBins[ibin],"FCErrFl",1);
-        //yerrafbLo[ibin]= -1*readParam(workBins[ibin],"FCErrAfb",0);
-        //yerrafbHi[ibin]= readParam(workBins[ibin],"FCErrAfb",1);
+        // errors from Feldman-Cousins method, no transformation needed for direct scanning.
+        yerrflLo[ibin] = -1*readParam(workBins[ibin],"FCErrFl",0);
+        yerrflHi[ibin] = readParam(workBins[ibin],"FCErrFl",1);
+        yerrafbLo[ibin]= -1*readParam(workBins[ibin],"FCErrAfb",0);
+        yerrafbHi[ibin]= readParam(workBins[ibin],"FCErrAfb",1);
 
         //if (yerrflLo[ibin] == 0){// errors from logL scanning
         //    yerrflLo[ibin]      = min(yfl[ibin],fabs(readParam(workBins[ibin],"scanFl",2)));
@@ -4534,13 +4536,13 @@ void angular3D(const char outfile[] = "angular3D")
         //    yerrafbHi[ibin]     = min(-0.75*(yfl[ibin]-1)-yafb[ibin],fabs(readParam(workBins[ibin],"scanAfb",3)));
         //}
 
-        if (yerrflLo[ibin] == 0){ // errors from HESSE
-            yerrflLo[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse",0)+readParam(workBins[ibin],"fl_hesse",2))-yfl[ibin]);
-            yerrflHi[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse",0)+readParam(workBins[ibin],"fl_hesse",3))-yfl[ibin]);
+        //if (yerrflLo[ibin] == 0){ // errors from HESSE
+        //    yerrflLo[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse",0)+readParam(workBins[ibin],"fl_hesse",2))-yfl[ibin]);
+        //    yerrflHi[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl_hesse",0)+readParam(workBins[ibin],"fl_hesse",3))-yfl[ibin]);
 
-            yerrafbLo[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse",0)+readParam(workBins[ibin],"afb_hesse",2),readParam(workBins[ibin],"fl_hesse",0))-yafb[ibin]);
-            yerrafbHi[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse",0)+readParam(workBins[ibin],"afb_hesse",3),readParam(workBins[ibin],"fl_hesse",0))-yafb[ibin]);
-        }
+        //    yerrafbLo[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse",0)+readParam(workBins[ibin],"afb_hesse",2),readParam(workBins[ibin],"fl_hesse",0))-yafb[ibin]);
+        //    yerrafbHi[ibin]     = fabs(toBoundedAfb(readParam(workBins[ibin],"afb_hesse",0)+readParam(workBins[ibin],"afb_hesse",3),readParam(workBins[ibin],"fl_hesse",0))-yafb[ibin]);
+        //}
 
         //if (yerrflLo[ibin] == 0){ // errors from MINOS
         //    yerrflLo[ibin]      = fabs(toBoundedFl(readParam(workBins[ibin],"fl",0)+readParam(workBins[ibin],"fl",2))-yfl[ibin]);
@@ -5324,7 +5326,7 @@ void getFCInterval(int iBin, int nToy=500)
     RooWorkspace *wspace = (RooWorkspace*)f_wspace->Get("wspace");
     if (!wspace) return;
     double  fl = toBoundedFl(readParam("fl",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal());
-    double  afb = toBoundedAfb(readParam("afb",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal(),fl);
+    double  afb = toBoundedAfb(readParam("afb",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal(),toUnboundedFl(fl));
 
     // output
     int maxPoints = 1024;
@@ -5398,18 +5400,26 @@ void getFCInterval(int iBin, int nToy=500)
     TF1 *f1_flIntervalLo  = new TF1("f1_flIntervalLo",  "[0]+[1]*x+[2]*x**2",0,1);
     TF1 *f1_afbIntervalHi = new TF1("f1_afbIntervalHi", "[0]+[1]*x+[2]*x**2",-1,1);
     TF1 *f1_afbIntervalLo = new TF1("f1_afbIntervalLo", "[0]+[1]*x+[2]*x**2",-1,1);
-    g_flIntervalHi->Fit("f1_flIntervalHi","","",max(0.01,fl-0.1),min(0.99,fl+0.3));
-    g_flIntervalLo->Fit("f1_flIntervalLo","","",max(0.01,fl-0.3),min(0.99,fl+0.1));
-    g_afbIntervalHi->Fit("f1_afbIntervalHi","","",max(0.01,afb-0.1),min(0.99,afb+0.3));
-    g_afbIntervalLo->Fit("f1_afbIntervalLo","","",max(0.01,afb-0.3),min(0.99,afb+0.1));
-    //g_flIntervalHi->Fit("f1_flIntervalHi");
-    //g_flIntervalLo->Fit("f1_flIntervalLo");
-    //g_afbIntervalHi->Fit("f1_afbIntervalHi");
-    //g_afbIntervalLo->Fit("f1_afbIntervalLo");
-    outFCErrFl[0]=max(0.,f1_flIntervalHi->Eval(fl))-fl;
-    outFCErrFl[1]=min(flTruth[nFlPoints-1],f1_flIntervalLo->Eval(fl))-fl;
-    outFCErrAfb[0]=max(-1*afbTruth[nAfbPoints-1],f1_afbIntervalHi->Eval(afb))-afb;
-    outFCErrAfb[1]=min(afbTruth[nAfbPoints-1],f1_afbIntervalLo->Eval(afb))-afb;
+    TFitResultPtr r_flIntervalHi = g_flIntervalHi->Fit("f1_flIntervalHi","S","",max(0.01,fl-0.1),min(0.99,fl+0.3));
+    TFitResultPtr r_flIntervalLi = g_flIntervalLo->Fit("f1_flIntervalLo","S","",max(0.01,fl-0.3),min(0.99,fl+0.1));
+    TFitResultPtr r_afbIntervalHi= g_afbIntervalHi->Fit("f1_afbIntervalHi","S","",max(0.01,afb-0.1),min(0.99,afb+0.3));
+    TFitResultPtr r_afbIntervalLo= g_afbIntervalLo->Fit("f1_afbIntervalLo","S","",max(0.01,afb-0.3),min(0.99,afb+0.1));
+        // Calculate the error, you must think about the case in which f1 not defined!
+    outFCErrFl[0] = r_flIntervalHi.Get()  != 0 ? max(0.,f1_flIntervalHi->Eval(fl))-fl : 0.-fl;
+    outFCErrFl[1] = r_flIntervalLi.Get()  != 0 ? min(flTruth[nFlPoints-1],f1_flIntervalLo->Eval(fl))-fl : flTruth[nFlPoints-1]-fl;
+    outFCErrAfb[0]= r_afbIntervalHi.Get() != 0 ? max(-1*afbTruth[nAfbPoints-1],f1_afbIntervalHi->Eval(afb))-afb : -1*afbTruth[nAfbPoints-1]-afb;
+    outFCErrAfb[1]= r_afbIntervalLo.Get() != 0 ? min(afbTruth[nAfbPoints-1],f1_afbIntervalLo->Eval(afb))-afb : afbTruth[nAfbPoints-1]-afb;
+    if ( outFCErrFl [1] < 0 ){
+        outFCErrFl [1] = 0;
+    }
+    if ( outFCErrAfb[0] > 0 ){
+        outFCErrAfb[0] = 0;
+        outFCErrFl [1] = 0;
+    }
+    if ( outFCErrAfb[1] < 0 ){
+        outFCErrAfb[1] = 0;
+        outFCErrFl [1] = 0;
+    }
 
         // Fl plots
     g_flIntervalHi->SetTitle("");
@@ -5532,6 +5542,12 @@ void rndEfficiencyMapTester()
     RooArgSet *f_sigA_argset = f_sigA->getVariables();
     f_sigA_argset->Print();
     errMtx->Print();
+
+    double *errMtxArray = errMtx->GetMatrixArray();
+    int rowIdx = 1;
+    int colIdx = 1;
+    printf("%f %f\n",errMtxArray[rowIdx*21+colIdx],errMtxArray[rowIdx*21+colIdx+1]);
+
     //f_sigA_argset
 
     //rndEfficiencyMap(f_sigA);
@@ -6183,7 +6199,7 @@ void createFCToys(int iBin, int nToy=500)// Create toys for contour scanning
     RooWorkspace *wspace = (RooWorkspace*)f_wspace->Get("wspace");
     if (!wspace) return;
     double  fl = toBoundedFl(wspace->var("fl")->getVal());
-    double  afb = toBoundedAfb(wspace->var("afb")->getVal(),fl);
+    double  afb = toBoundedAfb(wspace->var("afb")->getVal(),toUnboundedFl(fl));
     double  nsig = wspace->var("nsig")->getVal();
     double  nbkgComb = wspace->var("nbkgComb")->getVal();
 
@@ -6754,7 +6770,7 @@ int main(int argc, char** argv) {
             //printf("iBin=%d & Fl=%f & Afb=%f\n",workBins[iBin],toBoundedFl(readParam(workBins[iBin],"fl",0)),toBoundedAfb(readParam(workBins[iBin],"afb",0),readParam(workBins[iBin],"fl",0)));
         }
         //angular3D_bin(10,"angular3D",scaleFactor);
-        //rndEfficiencyMapTester();
+        rndEfficiencyMapTester();
     }else{ 
         cerr << "No function available for: " << func.Data() << endl; 
     }
