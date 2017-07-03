@@ -10,6 +10,10 @@ from threading import Thread
 
 number_of_threads = 11
 
+# Prepare wspaces
+iwspacepath="../wspace_ANv16/"
+idatacardpath="../datacard_ANv16/"
+
 class transfer_thread(Thread):
     def __init__ (self,headfolder,subfolder):
         Thread.__init__(self)
@@ -22,11 +26,15 @@ class transfer_thread(Thread):
         print time.ctime()
         print "Processing folder",self.headfolder,self.subfolder
         sys.stdout.flush()
-        cmd=["../fit", "angular3D_bins"  ,self.fullpath+"/*.root", "--iallpath="+self.headfolder, "--oallpath="+self.fullpath, "--iCombBkgWspacepath="+self.fullpath, "--keeplog", "--keepparam"]
+        ### This is for nominal bins
+        cmd=["../fit", "angular3D_bins"  ,self.fullpath+"/*.root", "--iallpath="+self.headfolder, "--oallpath="+self.fullpath, "--iCombBkgWspacepath="+self.fullpath, "--keeplog", "--keepparam", ">/dev/null" , "2>&1", ";touch " ,self.fullpath+"/pbsDone"]
+        ### This is for summary bins
+        # cmd=["../fit", "wideQ"  ,self.fullpath+"/*.root", "--iallpath="+self.headfolder, "--oallpath="+self.fullpath, "--iCombBkgWspacepath="+self.fullpath, "--keeplog", "--keepparam", ";touch "+self.fullpath+"pbsDone"]
         # cmd=["echo", "Dry run in "+self.fullpath]
-        # if "UnderProcessing" in os.listdir(self.fullpath):
-            # cmd=["echo", "Skip UnderProcessing tag in "+self.fullpath]
-        # print cmd
+        if "pbsRuntime" in os.listdir(self.fullpath):
+            cmd=["echo", "Skip pbsRuntime tag in "+self.fullpath]
+        print cmd
+        os.system("touch "+self.fullpath+"/pbsRuntime")
         time.sleep(3)
         operation = subprocess.Popen(cmd)
         operation.wait()
@@ -35,7 +43,7 @@ class transfer_thread(Thread):
 proclist = []
 
 binfolder="../limit/bin"
-if len(sys.argv) == 2 :
+if len(sys.argv) >= 2 :
     theBin = sys.argv[1]
     binfolder = binfolder+sys.argv[1]
     print "Running with "+binfolder
@@ -44,13 +52,19 @@ else:
 
 
 headfolders = []
-headfolderPattern = re.compile("^afb...._fl....$")
-for idx in os.listdir(binfolder):
-    if headfolderPattern.match(idx):
-        headfolders.append(idx)
+headfolderPatterns = []
+if len(sys.argv)>=2:
+    for pat in sys.argv[2:]:
+        print "Appending rePattern: {0}".format(pat)
+        headfolderPatterns.append(re.compile(pat))
+else:
+    headfolderPatterns = [re.compile("^afb....$"),re.compile("^fl+...$")]
 
-# Prepare wspaces
-iwspacepath="../wspace_ANv11_v3p5/"
+for pat in headfolderPatterns:
+    for idx in os.listdir(binfolder):
+        if pat.match(idx):
+            headfolders.append(idx)
+
 wspacePattern = re.compile("^wspace_.*.root$")
 for idx in os.listdir(iwspacepath):
     if wspacePattern.match(idx):
@@ -58,7 +72,6 @@ for idx in os.listdir(iwspacepath):
             if idx not in os.listdir(binfolder+'/'+headfolder):
                 shutil.copy2(iwspacepath+idx,binfolder+'/'+headfolder)
 
-idatacardpath="../datacard_ANv11_v3p5/"
 datacardPattern = re.compile("^fitParameters"+str(theBin)+"\.txt$")
 for idx in os.listdir(idatacardpath):
     if datacardPattern.match(idx):
@@ -68,29 +81,27 @@ for idx in os.listdir(idatacardpath):
 
 # Start loop
 subfolderPattern = re.compile("^set[0-9]...$")
-fitResultPattern = "wspace_angular3D_bin"+str(theBin)+".root"
+# fitResultPattern = "wspace_angular3D_bin"+str(theBin)+".root"
+fitResultPattern = "pbsDone"
 for headfolder in headfolders:
     print "Processing headfolder {0}".format(headfolder)
     for idx in os.listdir(binfolder+'/'+headfolder):
         fullpath = binfolder+'/'+headfolder+'/'+idx
         if not subfolderPattern.match(idx):
             continue
-
         if fitResultPattern in os.listdir(fullpath):
             # print "Old fitting result "+fullpath+'/'+fitResultPattern+" is found. Skip!"
-            if "UnderProcessing" in os.listdir(fullpath):
-                os.remove(fullpath+"/UnderProcessing")
-
-        elif "UnderProcessing" in os.listdir(fullpath):
+            if "pbsRuntime" in os.listdir(fullpath):
+                os.remove(fullpath+"/pbsRuntime")
+            if not "wspace_angular3D_bin{0}.root".format(theBin) in os.listdir(fullpath):
+                os.remove(fullpath+"/pbsDone")
+        elif "pbsRuntime" in os.listdir(fullpath):
             # Clean the tags during development
             # if fitResultPattern not in os.listdir(fullpath):
-                # os.remove(fullpath+"/UnderProcessing")
-
+                # os.remove(fullpath+"/pbsRuntime")
             print "Tag for running job is found in "+fullpath+". Skip!"
         else:
             print "Processing subfolder {0}".format(idx)
-            file=open(fullpath+"/UnderProcessing",'w')
-            file.close()
 
             n_active_proc = number_of_threads
             while n_active_proc>=number_of_threads:
