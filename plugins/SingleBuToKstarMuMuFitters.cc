@@ -400,10 +400,10 @@ void switchRedirectStdio(const char outfile[]="_stdio", const char mode[]="a", F
 // Transformation rule comes from AN2014_129_v14, p28.
 double toUnboundedFl(double fl){
     if ( fabs(fl-0.5) > 0.5 ){
-        fl = 0.5 + (fl>0.5-fl<0.5)*0.499;
+        fl = 0.5 + (fl>0.5-fl<0.5)*0.499999;
     }
     double result = TMath::Tan((fl-0.5)*TMath::Pi());
-    return result;
+    return result > 100 ? 100 : result;
 }
 double toBoundedFl(double fl_ubd){
     return 0.5+TMath::ATan(fl_ubd)/TMath::Pi();
@@ -412,9 +412,10 @@ double toUnboundedAfb(double afb, double fl){
     double rad = 2./3.*afb/(1.-fl);
     if ( fabs(rad) > 0.5 ){
         printf("DEBUG\t\t: [toUnboundedAfb] Input rad(afb=%f,fl=%f) = %f > 0.5\n",afb,fl,rad);
-        rad = ((rad>0)-(rad<0))*0.499;
+        rad = ((rad>0)-(rad<0))*0.499999;
     }
-    return TMath::Tan(rad*TMath::Pi());
+    double output = TMath::Tan(rad*TMath::Pi());
+    return fabs(output) > 100 ? ((output>0)-(output<0))*100 : output;
 }
 double toBoundedAfb(double afb_ubd, double fl_ubd){
     return 3./2.*(0.5-TMath::ATan(fl_ubd)/TMath::Pi())*TMath::ATan(afb_ubd)/TMath::Pi();
@@ -428,6 +429,15 @@ double toOriginAs(double as_tr, double fs, double fl_ubd)
 {
     double fl=toBoundedFl(fl_ubd);
     return 2*sqrt(3*fs*(1-fs)*fl)*0.89*as_tr;
+}
+double getAfbLimit(double ubdFl)
+{
+    return (1.-ubdFl)*0.75;
+}
+
+double getFlLimit(double ubdAfb)
+{
+    return 1.-fabs(ubdAfb/0.75);
 }
 
 bool scanAfbFlPositivePdf(double afb, double fl, bool fineScan=false)
@@ -6505,7 +6515,7 @@ void getFCInterval2(int iBin, int nToy=500)
     TFile *f_wspace = new TFile(TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin));
     RooWorkspace *wspace = (RooWorkspace*)f_wspace->Get("wspace");
     if (!wspace) return;
-    double  fl = toBoundedFl(readParam("fl",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal());
+    double  fl  = toBoundedFl(readParam("fl",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal());
     double  afb = toBoundedAfb(readParam("afb",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal(),toUnboundedFl(fl));
     printf("INFO\t\t: afb=%f, fl=%f\n",afb,fl);
 
@@ -6513,11 +6523,11 @@ void getFCInterval2(int iBin, int nToy=500)
     int maxPoints = 1024;//no more than 1024 slices in true value space. (NOW 100,200)
     int nFlPoints = 0;
     int nAfbPoints = 0;
-    double flTruth     [maxPoints];// True values for each set
-    double flTrueValues[maxPoints];// True values for each toy set
-    double flMeasuredHi[maxPoints];// this is the lower bound of confidence belt.
-    double flMeasuredLo[maxPoints];// this is the upper bound of confidence belt.
-    TF1    *flPDFs     [maxPoints];// P(measured|true);
+    double flTruth      [maxPoints];// True values for each set
+    double flTrueValues [maxPoints];// True values for each toy set
+    double flMeasuredHi [maxPoints];// this is the lower bound of confidence belt.
+    double flMeasuredLo [maxPoints];// this is the upper bound of confidence belt.
+    TF1    *flPDFs      [maxPoints];// P(measured|true);
     double afbTruth     [maxPoints];
     double afbTrueValues[maxPoints];
     double afbMeasuredHi[maxPoints];
@@ -6746,41 +6756,290 @@ void getFCInterval2(int iBin, int nToy=500)
 
     // Make plots, fit, and find confidence interval
     TFile *fout = new TFile(TString::Format("wspace_FCConfInterval_bin%d.root",iBin).Data(),"RECREATE");
+    double intervalBias = 0.2;
+    switch(iBin){
+        case 10:
+        case 12:
+            intervalBias=0.4;
+            break;
+    }
+    double intervalRange= 0.2;
+    double flFitInterval [4] = {0,1,0,1};
+    double afbFitInterval[4] = {-0.75, 0.75,-0.75, 0.75};
+    TGraph *g_flIntervalHi  = new TGraph();
+    TGraph *g_flIntervalLo  = new TGraph();
+    TGraph *g_afbIntervalHi = new TGraph();
+    TGraph *g_afbIntervalLo = new TGraph();
+    for(int iPt=0; iPt<nFlPoints; iPt++){
+        if (flMeasuredHi[iPt] < -1 || flMeasuredLo[iPt] < -1) continue;
+        g_flIntervalHi->SetPoint(g_flIntervalHi->GetN(),flMeasuredHi[iPt],flTrueValues[iPt]);
+        g_flIntervalLo->SetPoint(g_flIntervalLo->GetN(),flMeasuredLo[iPt],flTrueValues[iPt]);
+    }
+    for(int iPt=0; iPt<nAfbPoints; iPt++){
+        if (afbMeasuredHi[iPt] < -1 || afbMeasuredLo[iPt] < -1) continue;
+        g_afbIntervalHi->SetPoint(g_afbIntervalHi->GetN(),afbMeasuredHi[iPt],afbTrueValues[iPt]);
+        g_afbIntervalLo->SetPoint(g_afbIntervalLo->GetN(),afbMeasuredLo[iPt],afbTrueValues[iPt]);
+    }
+        // Fl plots
+    g_flIntervalHi->SetTitle("");
+    g_flIntervalHi->GetXaxis()->SetTitle("Measured F_{L}");
+    g_flIntervalHi->GetYaxis()->SetTitle("True F_{L}");
+    g_flIntervalHi->SetMarkerStyle(7);
+    g_flIntervalLo->SetMarkerStyle(7);
+    g_flIntervalHi->SetMarkerSize(0.4);
+    g_flIntervalLo->SetMarkerSize(0.4);
+    g_flIntervalHi->SetMarkerColor(8);
+    g_flIntervalLo->SetMarkerColor(9);
+    g_afbIntervalHi->SetTitle("");
+    g_afbIntervalHi->GetXaxis()->SetTitle("Measured A_{FB}");
+    g_afbIntervalHi->GetYaxis()->SetTitle("True A_{FB}");
+    g_afbIntervalHi->SetMarkerStyle(7);
+    g_afbIntervalLo->SetMarkerStyle(7);
+    g_afbIntervalHi->SetMarkerSize(0.4);
+    g_afbIntervalLo->SetMarkerSize(0.4);
+    g_afbIntervalHi->SetMarkerColor(8);
+    g_afbIntervalLo->SetMarkerColor(9);
+
+    g_afbIntervalHi->Write("g_afbIntervalHi");
+    g_afbIntervalLo->Write("g_afbIntervalLo");
+    for(int iTrueAfb = 0; iTrueAfb*stepSizeAfb < 2.; iTrueAfb++){
+        if (finAfb[iTrueAfb] == 0) continue;
+        h_setSummaryAfb[iTrueAfb]->Write();
+        afbPDFs[iTrueAfb]->Write();
+        h_LRAfb[iTrueAfb]->Write();
+        finAfb[iTrueAfb]->Close();
+    }
+    g_flIntervalHi->Write("g_flIntervalHi");
+    g_flIntervalLo->Write("g_flIntervalLo");
+    for(int iTrueFl = 0; iTrueFl*stepSizeFl < 1.; iTrueFl++){
+        if (finFl[iTrueFl] == 0) continue;
+        h_setSummaryFl[iTrueFl]->Write();
+        flPDFs[iTrueFl]->Write();
+        h_LRFl[iTrueFl]->Write();
+        finFl[iTrueFl]->Close();
+    }
+    fout->Write();
+    fout->Close();
+    return;
+
+}//}}}
+void fitFCInterval(int iBin)
+{//{{{
+    TFile *fIn = new TFile(TString::Format("./wspace_FCConfInterval_bin%d.root",iBin),"UPDATE");   
     TCanvas *canvas = new TCanvas();
     TLatex *latex = new TLatex();
     latex->SetNDC();
     TLine *line = new TLine();
-    TGraph *g_flIntervalHi = new TGraph(nFlPoints,flMeasuredHi,   flTrueValues);
-    TGraph *g_flIntervalLo = new TGraph(nFlPoints,flMeasuredLo,   flTrueValues);
-    TGraph *g_afbIntervalHi = new TGraph(nAfbPoints,afbMeasuredHi,afbTrueValues);
-    TGraph *g_afbIntervalLo = new TGraph(nAfbPoints,afbMeasuredLo,afbTrueValues);
-    TF1 *f1_flIntervalHi  = new TF1("f1_flIntervalHi",  "[0]+[1]*x+[2]*x**3+[3]*x**2",0,1);
-    TF1 *f1_flIntervalLo  = new TF1("f1_flIntervalLo",  "[0]+[1]*x+[2]*x**3+[3]*exp([4]*x)",0,1); //
-    TF1 *f1_afbIntervalHi = new TF1("f1_afbIntervalHi", "[0]+[1]*x+[2]*x**3+[3]*x**5",-0.75,0.75);
-    TF1 *f1_afbIntervalLo = new TF1("f1_afbIntervalLo", "[0]+[1]*x+[2]*x**3+[3]*x**5",-0.75,0.75);
-    double flFitInterval [4] = {0.05,0.95,0.05,0.95};
-    double afbFitInterval[4] = {-0.7,0.7,-0.7,0.7};
+    double  fl  = toBoundedFl(readParam("fl",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal());
+    double  afb = toBoundedAfb(readParam("afb",TString::Format("%s/wspace_angular3D_bin%d.root",iwspacepath.Data(),iBin).Data())->getVal(),toUnboundedFl(fl));
+    printf("INFO\t\t: afb=%f, fl=%f\n",afb,fl);
+    
+
+    TGraph *g_ori_flIntervalHi  = (TGraph*)fIn->Get("g_flIntervalHi");
+    TGraph *g_ori_flIntervalLo  = (TGraph*)fIn->Get("g_flIntervalLo");
+    TGraph *g_ori_afbIntervalHi = (TGraph*)fIn->Get("g_afbIntervalHi");
+    TGraph *g_ori_afbIntervalLo = (TGraph*)fIn->Get("g_afbIntervalLo");
+
+    // Constrain show range
+    double flGraphInterval [4];
+    double afbGraphInterval[4];
+    double intervalBias = 0.2;
+    double intervalRange= 0.3;
     switch(iBin){
         case 10:
-            flFitInterval[2] = 0.05;
-            //flFitInterval[3] = 0.5;
+        case 4:
+        case 9:
+            intervalBias =0.2;
+            intervalRange=0.3;
             break;
-        defalut:
+        case 11:
+            intervalBias =0.2;
+            intervalRange=0.40;
+            break;
+        case 12:
+            intervalRange=-1;
+            flGraphInterval [0] = max( 0.  ,0.20);
+            flGraphInterval [1] = min( 1.  ,0.60);
+            flGraphInterval [2] = max( 0.  ,0.40);
+            flGraphInterval [3] = min( 1.  ,0.99);
+            afbGraphInterval[0] = max(-0.75,-0.50);
+            afbGraphInterval[1] = min( 0.75,-0.20);
+            afbGraphInterval[2] = max(-0.75, 0.20);
+            afbGraphInterval[3] = min( 0.75, 0.50);
             break;
     }
-    //TFitResultPtr r_flIntervalHi = g_flIntervalHi->Fit("f1_flIntervalHi","S","",max(0.01,fl-0.1),min(0.99,fl+0.3));
-    //TFitResultPtr r_flIntervalLi = g_flIntervalLo->Fit("f1_flIntervalLo","S","",max(0.01,fl-0.3),min(0.99,fl+0.1));
-    //TFitResultPtr r_afbIntervalHi= g_afbIntervalHi->Fit("f1_afbIntervalHi","S","",max(-0.99,afb-0.1),min(0.99,afb+0.3));
-    //TFitResultPtr r_afbIntervalLo= g_afbIntervalLo->Fit("f1_afbIntervalLo","S","",max(-0.99,afb-0.3),min(0.99,afb+0.1));
-    TFitResultPtr r_flIntervalHi = g_flIntervalHi->Fit("f1_flIntervalHi","SN","",flFitInterval[0],flFitInterval[1]);
-    TFitResultPtr r_flIntervalLi = g_flIntervalLo->Fit("f1_flIntervalLo","SN","",flFitInterval[2],flFitInterval[3]);
-    TFitResultPtr r_afbIntervalHi= g_afbIntervalHi->Fit("f1_afbIntervalHi","SN","",afbFitInterval[0],afbFitInterval[1]);
-    TFitResultPtr r_afbIntervalLo= g_afbIntervalLo->Fit("f1_afbIntervalLo","SN","",afbFitInterval[2],afbFitInterval[3]);
+    if ( intervalRange > 0){
+        flGraphInterval [0] = max( 0.  ,fl -intervalBias-intervalRange);
+        flGraphInterval [1] = min( 1.  ,fl -intervalBias+intervalRange);
+        flGraphInterval [2] = max( 0.  ,fl +intervalBias-intervalRange);
+        flGraphInterval [3] = min( 1.  ,fl +intervalBias+intervalRange);
+        afbGraphInterval[0] = max(-0.75,afb-intervalBias-intervalRange);
+        afbGraphInterval[1] = min( 0.75,afb-intervalBias+intervalRange);
+        afbGraphInterval[2] = max(-0.75,afb+intervalBias-intervalRange);
+        afbGraphInterval[3] = min( 0.75,afb+intervalBias+intervalRange);
+    }
+
+    // Filter interval
+    TH1D   h_bias_flHi ("h_bias_flHi" ,"",200,-1,1);
+    TH1D   h_bias_flLo ("h_bias_flLo" ,"",200,-1,1);
+    TH1D   h_bias_afbHi("h_bias_afbHi","",400,-2,2);
+    TH1D   h_bias_afbLo("h_bias_afbLo","",400,-2,2);
+    for(int iPt=0; iPt<g_ori_flIntervalHi->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_flIntervalHi->GetPoint(iPt, measVal, trueVal);
+        if (trueVal>flGraphInterval[0] && trueVal<flGraphInterval[1] && fabs(measVal) < 1.){
+            h_bias_flHi.Fill(measVal-trueVal);
+        }
+    }
+    for(int iPt=0; iPt<g_ori_flIntervalLo->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_flIntervalLo->GetPoint(iPt, measVal, trueVal);
+        if (trueVal>flGraphInterval[2] && trueVal<flGraphInterval[3] && fabs(measVal) < 1.){
+            h_bias_flLo.Fill(measVal-trueVal);
+        }
+    }
+    for(int iPt=0; iPt<g_ori_afbIntervalHi->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_afbIntervalHi->GetPoint(iPt, measVal, trueVal);
+        if (trueVal>afbGraphInterval[0] && trueVal<afbGraphInterval[1] && fabs(measVal) < 1.){
+            h_bias_afbHi.Fill(measVal-trueVal);
+        }
+    }
+    for(int iPt=0; iPt<g_ori_afbIntervalLo->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_afbIntervalLo->GetPoint(iPt, measVal, trueVal);
+        if (trueVal>afbGraphInterval[2] && trueVal<afbGraphInterval[3] && fabs(measVal) < 1.){
+            h_bias_afbLo.Fill(measVal-trueVal);
+        }
+    }
+
+    // Filter very biased points
+    double flFitInterval   [4] = {1.,0.,1.,0.};
+    double afbFitInterval  [4] = {1.,-1,1.,-1};;
+    TGraph *g_fil_flIntervalHi  = new TGraph();
+    TGraph *g_fil_flIntervalLo  = new TGraph();
+    TGraph *g_fil_afbIntervalHi = new TGraph();
+    TGraph *g_fil_afbIntervalLo = new TGraph();
+    TGraph *g_flIntervalHi      = new TGraph();
+    TGraph *g_flIntervalLo      = new TGraph();
+    TGraph *g_afbIntervalHi     = new TGraph();
+    TGraph *g_afbIntervalLo     = new TGraph();
+    TFitResultPtr ptr_biasFitResult = 0;
+    double biasMean, biasError;
+    double nError = iBin == 11 ? 2. : 1.;
+
+    ptr_biasFitResult = h_bias_flHi.Fit("gaus","SWM","",-1,1);
+    biasMean = ptr_biasFitResult->GetParams()[1];
+    biasError= ptr_biasFitResult->GetParams()[2];
+    for(int iPt=0; iPt<g_ori_flIntervalHi->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_flIntervalHi->GetPoint(iPt, measVal, trueVal);
+        if ( fabs(measVal) > 1.) continue;
+        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+            g_flIntervalHi->SetPoint(g_flIntervalHi->GetN(),measVal,trueVal);
+            if (trueVal>flGraphInterval[0] && trueVal<flGraphInterval[1]){
+                g_fil_flIntervalHi->SetPoint(g_fil_flIntervalHi->GetN(),measVal,trueVal);
+                if (measVal < flFitInterval[0]){
+                    flFitInterval[0] = measVal;
+                }else if (measVal > flFitInterval[1]){
+                    flFitInterval[1] = measVal;
+                }
+            }
+        }
+    }
+    ptr_biasFitResult = h_bias_flLo.Fit("gaus","SWM","",-1,1);
+    biasMean = ptr_biasFitResult->GetParams()[1];
+    biasError= ptr_biasFitResult->GetParams()[2];
+    for(int iPt=0; iPt<g_ori_flIntervalLo->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_flIntervalLo->GetPoint(iPt, measVal, trueVal);
+        if ( fabs(measVal) > 1.) continue;
+        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+            g_flIntervalLo->SetPoint(g_flIntervalLo->GetN(),measVal,trueVal);
+            if (trueVal>flGraphInterval[2] && trueVal<flGraphInterval[3]){
+                g_fil_flIntervalLo->SetPoint(g_fil_flIntervalLo->GetN(),measVal,trueVal);
+                if (measVal < flFitInterval[2]){
+                    flFitInterval[2] = measVal;
+                }else if (measVal > flFitInterval[3]){
+                    flFitInterval[3] = measVal;
+                }
+            }
+        }
+    }
+    ptr_biasFitResult = h_bias_afbHi.Fit("gaus","SWM","",-2,2);
+    biasMean = ptr_biasFitResult->GetParams()[1];
+    biasError= ptr_biasFitResult->GetParams()[2];
+    for(int iPt=0; iPt<g_ori_afbIntervalHi->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_afbIntervalHi->GetPoint(iPt, measVal, trueVal);
+        if ( fabs(measVal) > 1.) continue;
+        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+            g_afbIntervalHi->SetPoint(g_afbIntervalHi->GetN(),measVal,trueVal);
+            if (trueVal>afbGraphInterval[0] && trueVal<afbGraphInterval[1] ){
+                g_fil_afbIntervalHi->SetPoint(g_fil_afbIntervalHi->GetN(),measVal,trueVal);
+                if (measVal < afbFitInterval[0]){
+                    afbFitInterval[0] = measVal;
+                }else if (measVal > afbFitInterval[1]){
+                    afbFitInterval[1] = measVal;
+                }
+            }
+        }
+    }
+    ptr_biasFitResult = h_bias_afbLo.Fit("gaus","SWM","",-2,2);
+    biasMean = ptr_biasFitResult->GetParams()[1];
+    biasError= ptr_biasFitResult->GetParams()[2];
+    for(int iPt=0; iPt<g_ori_afbIntervalLo->GetN(); iPt++){
+        double trueVal, measVal;
+        g_ori_afbIntervalLo->GetPoint(iPt, measVal, trueVal);
+        if ( fabs(measVal) > 1.) continue;
+        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+            g_afbIntervalLo->SetPoint(g_afbIntervalLo->GetN(),measVal,trueVal);
+            if (trueVal>afbGraphInterval[2] && trueVal<afbGraphInterval[3] ){
+                g_fil_afbIntervalLo->SetPoint(g_fil_afbIntervalLo->GetN(),measVal,trueVal);
+                if (measVal < afbFitInterval[2]){
+                    afbFitInterval[2] = measVal;
+                }else if (measVal > afbFitInterval[3]){
+                    afbFitInterval[3] = measVal;
+                }
+            }
+        }
+    }
+    printf("ERROR\t\t: %d, %d, %d, %d.\n",g_fil_flIntervalHi->GetN(),g_fil_flIntervalLo->GetN(),g_fil_afbIntervalHi->GetN(),g_fil_afbIntervalLo->GetN());
+
+    TF1 *f1_fil_flIntervalHi  = new TF1("f1_fil_flIntervalHi",  "[0]+[1]*x", 0.,1.);
+    TF1 *f1_fil_flIntervalLo  = new TF1("f1_fil_flIntervalLo",  "[0]+[1]*x", 0.,1.); 
+    TF1 *f1_fil_afbIntervalHi = new TF1("f1_fil_afbIntervalHi", "[0]+[1]*x",-0.75,0.75);
+    TF1 *f1_fil_afbIntervalLo = new TF1("f1_fil_afbIntervalLo", "[0]+[1]*x",-0.75,0.75);
+    //TF1 *f1_flIntervalHi  = new TF1("f1_flIntervalHi",  "[0]+[1]*x+[2]*x**3+[3]*x**2"      ,0,1);
+    //TF1 *f1_flIntervalLo  = new TF1("f1_flIntervalLo",  "[0]+[1]*x+[2]*x**3+[3]*exp([4]*x)",0,1);
+    //TF1 *f1_afbIntervalHi = new TF1("f1_afbIntervalHi", "[0]+[1]*x+[2]*x**3+[3]*x**5",-0.75,0.75);
+    //TF1 *f1_afbIntervalLo = new TF1("f1_afbIntervalLo", "[0]+[1]*x+[2]*x**3+[3]*x**5",-0.75,0.75);
+    const double bdWidth = 0.005;
+    TF1 *f1_flIntervalHi  = new TF1("f1_flIntervalHi"  , "[2]+[3]*TMath::Erf([0]*x+[1])"        , 0+bdWidth     , 1-bdWidth);
+    TF1 *f1_flIntervalLo  = new TF1("f1_flIntervalLo"  , "[0]+(1-[3])*TMath::Erf([1]*x+[2])"    , 0+bdWidth     , 1-bdWidth);
+    TF1 *f1_afbIntervalHi = new TF1("f1_afbIntervalHi" , "-0.75+1.5*TMath::Erf([0]*x+[1])"      , -0.75+bdWidth , 0.75-bdWidth);
+    TF1 *f1_afbIntervalLo = new TF1("f1_afbIntervalLo" , "[0]+(0.75-[3])*TMath::Erf([1]*x+[2])" , -0.75+bdWidth , 0.75-bdWidth);
+    f1_flIntervalHi ->SetParameters(1,0,0,1);
+    f1_flIntervalLo ->SetParameters(0,1,0);
+    f1_afbIntervalHi->SetParameters(1,0);
+    f1_afbIntervalLo->SetParameters(-0.75,1,0);
+    
+    TFitResultPtr r_fil_flIntervalHi = g_fil_flIntervalHi ->Fit("f1_fil_flIntervalHi" ,"SWM","",flFitInterval [0],flFitInterval [1]);
+    TFitResultPtr r_fil_flIntervalLo = g_fil_flIntervalLo ->Fit("f1_fil_flIntervalLo" ,"SWM","",flFitInterval [2],flFitInterval [3]);
+    TFitResultPtr r_fil_afbIntervalHi= g_fil_afbIntervalHi->Fit("f1_fil_afbIntervalHi","SWM","",afbFitInterval[0],afbFitInterval[1]);
+    TFitResultPtr r_fil_afbIntervalLo= g_fil_afbIntervalLo->Fit("f1_fil_afbIntervalLo","SWM","",afbFitInterval[2],afbFitInterval[3]);
+    TFitResultPtr r_flIntervalHi     = g_flIntervalHi     ->Fit("f1_flIntervalHi" ,"SWMR");
+    TFitResultPtr r_flIntervalLo     = g_flIntervalLo     ->Fit("f1_flIntervalLo" ,"SWMR");
+    TFitResultPtr r_afbIntervalHi    = g_afbIntervalHi    ->Fit("f1_afbIntervalHi","SWMR");
+    TFitResultPtr r_afbIntervalLo    = g_afbIntervalLo    ->Fit("f1_afbIntervalLo","SWMR");
+
         // Calculate the error, you must think about the case in which f1 not defined!
-    outFCErrFl[0] = r_flIntervalHi.Get()  != 0 ? max(0.,f1_flIntervalHi->Eval(fl))-fl : 0.-fl;
-    outFCErrFl[1] = r_flIntervalLi.Get()  != 0 ? min(flTrueValues[nFlPoints-1],f1_flIntervalLo->Eval(fl))-fl : flTrueValues[nFlPoints-1]-fl;
-    outFCErrAfb[0]= r_afbIntervalHi.Get() != 0 ? max(-1*afbTrueValues[nAfbPoints-1],f1_afbIntervalHi->Eval(afb))-afb : -1*afbTrueValues[nAfbPoints-1]-afb;
-    outFCErrAfb[1]= r_afbIntervalLo.Get() != 0 ? min(afbTrueValues[nAfbPoints-1],f1_afbIntervalLo->Eval(afb))-afb : afbTrueValues[nAfbPoints-1]-afb;
+    double outFCErrFl[2];
+    double outFCErrAfb[2];
+    outFCErrFl[0] = r_fil_flIntervalHi.Get()  != 0 ? max(0.   ,f1_fil_flIntervalHi ->Eval(fl))-fl   :              0.-fl;
+    outFCErrFl[1] = r_fil_flIntervalLo.Get()  != 0 ? min(1.   ,f1_fil_flIntervalLo ->Eval(fl))-fl   : getFlLimit(afb)-fl;
+    outFCErrAfb[0]= r_fil_afbIntervalHi.Get() != 0 ? max(-0.75,f1_fil_afbIntervalHi->Eval(afb))-afb : -1*getAfbLimit(fl)-afb;
+    outFCErrAfb[1]= r_fil_afbIntervalLo.Get() != 0 ? min( 0.75,f1_fil_afbIntervalLo->Eval(afb))-afb :    getAfbLimit(fl)-afb;
     if ( outFCErrFl [1] < 0 ){
         outFCErrFl [1] = 0;
     }
@@ -6794,86 +7053,97 @@ void getFCInterval2(int iBin, int nToy=500)
     }
 
         // Fl plots
-    g_flIntervalHi->SetTitle("");
-    g_flIntervalHi->GetXaxis()->SetTitle("Measured F_{L}");
-    g_flIntervalHi->GetXaxis()->SetLimits(0.05,min(0.95,1.1*max(fl,flTrueValues[nFlPoints-1])));
-    //g_flIntervalHi->GetXaxis()->SetLimits(0.05,1.1*max(fl,flTrueValues[nFlPoints-1]));
-    g_flIntervalHi->GetYaxis()->SetTitle("True F_{L}");
-    g_flIntervalHi->GetYaxis()->SetRangeUser(0.,max(fl,flTrueValues[nFlPoints-1]));
-    g_flIntervalHi->SetMarkerStyle(7);
-    g_flIntervalLo->SetMarkerStyle(7);
-    g_flIntervalHi->SetMarkerSize(0.4);
-    g_flIntervalLo->SetMarkerSize(0.4);
-    g_flIntervalHi->Draw("AP");
-    g_flIntervalLo->Draw("P SAME");
-    f1_flIntervalHi ->Draw("SAME");
-    f1_flIntervalLo ->Draw("SAME"); 
+    g_fil_flIntervalHi->SetTitle("");
+    g_fil_flIntervalHi->GetXaxis()->SetTitle("Measured F_{L}");
+    //g_fil_flIntervalHi->GetXaxis()->SetLimits(0.05,min(0.95,1.1*max(fl,getFlLimit(afb))));
+    g_fil_flIntervalHi->GetXaxis()->SetLimits(0.,1.);
+    g_fil_flIntervalHi->GetYaxis()->SetTitle("True F_{L}");
+    g_fil_flIntervalHi->GetYaxis()->SetRangeUser(0.,1.);
+    g_fil_flIntervalHi->SetMarkerStyle(7);
+    g_fil_flIntervalLo->SetMarkerStyle(7);
+    g_fil_flIntervalHi->SetMarkerSize(0.4);
+    g_fil_flIntervalLo->SetMarkerSize(0.4);
+    g_fil_flIntervalHi->SetMarkerColor(8);
+    g_fil_flIntervalLo->SetMarkerColor(9);
+    g_fil_flIntervalHi->Draw("AP");
+    g_fil_flIntervalLo->Draw("P SAME");
     line->SetLineStyle(2);
     line->SetLineColor(2);
-    line->DrawLine(fl,0,fl,flTrueValues[nFlPoints-1]);
-    line->SetLineStyle(2);
-    line->SetLineColor(1);
-    line->DrawLine(g_flIntervalHi->GetXaxis()->GetXmin(),flTrueValues[nFlPoints-1],g_flIntervalHi->GetXaxis()->GetXmax(),flTrueValues[nFlPoints-1]);
+    line->DrawLine(fl,0,fl,1.);
+    //line->SetLineStyle(2);
+    //line->SetLineColor(1);
+    //line->DrawLine(g_fil_flIntervalHi->GetXaxis()->GetXmin(),getFlLimit(afb),g_fil_flIntervalHi->GetXaxis()->GetXmax(),getFlLimit(afb));
     latex->DrawLatexNDC(0.15,0.75,TString::Format("F_{L}=%.3f^{%+.3f}_{%+.3f}",fl,outFCErrFl[1],outFCErrFl[0]).Data());
     canvas->Update();
     canvas->Print(TString::Format("%s/FCConfInterval_fl_bin%d.pdf",plotpath.Data(),iBin));
-    // Afb plots, remark true afb could be negative
-    g_afbIntervalHi->SetTitle("");
-    g_afbIntervalHi->GetXaxis()->SetTitle("Measured A_{FB}");
-    g_afbIntervalHi->GetXaxis()->SetLimits(-0.70,0.70);
-    //g_afbIntervalHi->GetXaxis()->SetLimits(-0.75,0.75);
-    g_afbIntervalHi->GetYaxis()->SetTitle("True A_{FB}");
-    g_afbIntervalHi->GetYaxis()->SetRangeUser(-1.1*max(afb,afbTrueValues[nAfbPoints-1]),1.1*max(afb,afbTrueValues[nAfbPoints-1]));
-    g_afbIntervalHi->SetMarkerStyle(7);
-    g_afbIntervalLo->SetMarkerStyle(7);
-    g_afbIntervalHi->SetMarkerSize(0.4);
-    g_afbIntervalLo->SetMarkerSize(0.4);
-    g_afbIntervalHi->Draw("AP");
-    g_afbIntervalLo->Draw("P SAME");
-    f1_afbIntervalHi->Draw("SAME"); 
-    f1_afbIntervalLo->Draw("SAME"); 
+
+    g_flIntervalHi->GetXaxis()->SetLimits(0.,1.);
+    g_flIntervalHi->GetYaxis()->SetRangeUser(0.,1.);
+    g_flIntervalHi->GetXaxis()->SetTitle("Measured F_{L}");
+    g_flIntervalHi->GetYaxis()->SetTitle("True F_{L}");
+    g_flIntervalHi->SetMarkerSize(0.8);
+    g_flIntervalLo->SetMarkerSize(0.8);
+    g_flIntervalHi->Draw("AP");
+    g_flIntervalLo->Draw("P SAME");
     line->SetLineStyle(2);
     line->SetLineColor(2);
-    line->DrawLine(afb,-1*afbTrueValues[nAfbPoints-1]*1.1,afb,afbTrueValues[nAfbPoints-1]*1.1);
+    line->DrawLine(fl,0,fl,1.);
+    canvas->Update();
+    canvas->Print(TString::Format("%s/FCConfInterval_fl_global_bin%d.pdf",plotpath.Data(),iBin));
+
+        // Afb plots, remark true afb could be negative
+    g_fil_afbIntervalHi->SetTitle("");
+    g_fil_afbIntervalHi->GetXaxis()->SetTitle("Measured A_{FB}");
+    g_fil_afbIntervalHi->GetXaxis()->SetLimits(-1.,1.);
+    g_fil_afbIntervalHi->GetYaxis()->SetTitle("True A_{FB}");
+    g_fil_afbIntervalHi->GetYaxis()->SetRangeUser(-1.,1.);
+    g_fil_afbIntervalHi->SetMarkerStyle(7);
+    g_fil_afbIntervalLo->SetMarkerStyle(7); 
+    g_fil_afbIntervalHi->SetMarkerSize(0.4);
+    g_fil_afbIntervalLo->SetMarkerSize(0.4);
+    g_fil_afbIntervalHi->SetMarkerColor(8);
+    g_fil_afbIntervalLo->SetMarkerColor(9);
+    g_fil_afbIntervalHi->Draw("AP");
+    g_fil_afbIntervalLo->Draw("P SAME");
     line->SetLineStyle(2);
-    line->SetLineColor(1);
-    //line->DrawLine(g_afbIntervalHi->GetXaxis()->GetXmin(),afbTrueValues[nAfbPoints-1],g_afbIntervalHi->GetXaxis()->GetXmax(),afbTrueValues[nAfbPoints-1]);
-    //line->DrawLine(g_afbIntervalHi->GetXaxis()->GetXmin(),-1*afbTrueValues[nAfbPoints-1],g_afbIntervalHi->GetXaxis()->GetXmax(),-1*afbTrueValues[nAfbPoints-1]);
+    line->SetLineColor(2);
+    line->DrawLine(afb,-1.,afb,1.);
+    //line->SetLineStyle(2);
+    //line->SetLineColor(1);
+    //line->DrawLine(g_fil_afbIntervalHi->GetXaxis()->GetXmin(),   getAfbLimit(fl),g_fil_afbIntervalHi->GetXaxis()->GetXmax(),   getAfbLimit(fl));
+    //line->DrawLine(g_fil_afbIntervalHi->GetXaxis()->GetXmin(),-1*getAfbLimit(fl),g_fil_afbIntervalHi->GetXaxis()->GetXmax(),-1*getAfbLimit(fl));
     latex->DrawLatexNDC(0.15,0.75,TString::Format("A_{FB}=%.3f^{%+.3f}_{%+.3f}",afb,outFCErrAfb[1],outFCErrAfb[0]).Data());
     canvas->Update();
     canvas->Print(TString::Format("%s/FCConfInterval_afb_bin%d.pdf",plotpath.Data(),iBin));
 
-    f1_afbIntervalHi->Write();
-    f1_afbIntervalLo->Write();
-    for(int iTrueAfb = 0; iTrueAfb*stepSizeAfb < 2.; iTrueAfb++){
-        if (finAfb[iTrueAfb] == 0) continue;
-        h_setSummaryAfb[iTrueAfb]->Write();
-        afbPDFs[iTrueAfb]->Write();
-        h_LRAfb[iTrueAfb]->Write();
-        finAfb[iTrueAfb]->Close();
-    }
-    f1_flIntervalHi->Write();
-    f1_flIntervalLo->Write();
-    for(int iTrueFl = 0; iTrueFl*stepSizeFl < 1.; iTrueFl++){
-        if (finFl[iTrueFl] == 0) continue;
-        h_setSummaryFl[iTrueFl]->Write();
-        flPDFs[iTrueFl]->Write();
-        h_LRFl[iTrueFl]->Write();
-        finFl[iTrueFl]->Close();
-    }
-    fout->Write();
-    fout->Close();
+    g_afbIntervalHi->GetXaxis()->SetLimits(-0.75,0.75);
+    g_afbIntervalHi->GetYaxis()->SetRangeUser(-0.75,0.75);
+    g_afbIntervalHi->GetXaxis()->SetTitle("Measured A_{FB}");
+    g_afbIntervalHi->GetYaxis()->SetTitle("True A_{FB}");
+    g_afbIntervalHi->SetMarkerSize(0.8);
+    g_afbIntervalLo->SetMarkerSize(0.8);
+    g_afbIntervalHi->Draw("AP");
+    g_afbIntervalLo->Draw("P SAME");
+    line->SetLineStyle(2);
+    line->SetLineColor(2);
+    line->DrawLine(afb,-0.75,afb,0.75);
+    canvas->Update();
+    canvas->Print(TString::Format("%s/FCConfInterval_afb_global_bin%d.pdf",plotpath.Data(),iBin));
+
+    fIn->cd();
+    f1_fil_afbIntervalHi->Write(0,TObject::kWriteDelete);
+    f1_fil_afbIntervalLo->Write(0,TObject::kWriteDelete);
+    f1_fil_flIntervalHi ->Write(0,TObject::kWriteDelete);
+    f1_fil_flIntervalLo ->Write(0,TObject::kWriteDelete);
+    f1_afbIntervalHi    ->Write(0,TObject::kWriteDelete);
+    f1_afbIntervalLo    ->Write(0,TObject::kWriteDelete);
+    f1_flIntervalHi     ->Write(0,TObject::kWriteDelete);
+    f1_flIntervalLo     ->Write(0,TObject::kWriteDelete);
+    fIn->Write();
+    fIn->Close();
 
     writeParam(iBin,"FCErrFl" ,outFCErrFl );
     writeParam(iBin,"FCErrAfb",outFCErrAfb);
-
-    return;
-
-}//}}}
-void getFCIntervalRooStat(int iBin)
-{//{{{
-    // Take advantage of RooStat
-    // Ref: https://root.cern.ch/root/html/tutorials/roostats/rs401d_FeldmanCousins.C.html
 }//}}}
 void getFCResultCoverage(int iBin)
 {//{{{// Incorrect definition, use getFCResultCoverage2 for instead
@@ -6946,8 +7216,8 @@ void getFCResultCoverage2(int iBin)
 
     TString toysDir = TString::Format("./limit/bestFit");// FIX ME!
 
-    TFile *f_summary = new TFile(TString::Format("%s/setSummary_bin%d.root",toysDir.Data(),iBin).Data());
-    TFile *f_fcresult= new TFile(TString::Format("%s/wspace_FCConfInterval_bin%d.root",iwspacepath.Data(),iBin).Data());
+    TFile *f_summary = new TFile(TString::Format("%s/setSummary_bin%d.root"             ,toysDir.Data(),iBin).Data());
+    TFile *f_fcresult= new TFile(TString::Format("%s/wspace_FCConfInterval_bin%d.root"  ,iwspacepath.Data(),iBin).Data());
         
     TCanvas *canvas = new TCanvas();
     TLine *line = new TLine();
@@ -6955,9 +7225,9 @@ void getFCResultCoverage2(int iBin)
     line->SetLineColor(2);
     TLatex *latex = new TLatex();
 
-    TH1F  *h_setSummaryAfb = (TH1F*)f_summary->Get("h_setSummaryAfb");
-    TF1 *f1_afbIntervalLo = (TF1*)f_fcresult->Get("f1_afbIntervalLo");
-    TF1 *f1_afbIntervalHi = (TF1*)f_fcresult->Get("f1_afbIntervalHi");
+    TH1F  *h_setSummaryAfb  = (TH1F*)f_summary->Get("h_setSummaryAfb");
+    TF1   *f1_afbIntervalLo = (TF1*)f_fcresult->Get("f1_afbIntervalLo");
+    TF1   *f1_afbIntervalHi = (TF1*)f_fcresult->Get("f1_afbIntervalHi");
     double afbCoverage[1]={0};
     for(int jBin=1; jBin<=h_setSummaryAfb->GetNbinsX(); jBin++){
         double binCenter = h_setSummaryAfb->GetBinCenter(jBin);
@@ -6995,24 +7265,24 @@ void getFCResultCoverage2(int iBin)
     
     h_setSummaryAfb->SetTitle("");
     h_setSummaryAfb->Draw();
-    //line->DrawLine(afbCoverLo, h_setSummaryAfb->GetMinimum(), afbCoverLo, h_setSummaryAfb->GetMaximum());
-    //line->DrawLine(afbCoverHi, h_setSummaryAfb->GetMinimum(), afbCoverHi, h_setSummaryAfb->GetMaximum());
-    latex->DrawLatexNDC(0.15,0.8,TString::Format("Coverage=%.2f%%",afbCoverage[0]*100).Data());
+    line  ->DrawLine(afbCoverLo, h_setSummaryAfb->GetMinimum(), afbCoverLo, h_setSummaryAfb->GetMaximum());
+    line  ->DrawLine(afbCoverHi, h_setSummaryAfb->GetMinimum(), afbCoverHi, h_setSummaryAfb->GetMaximum());
+    latex ->DrawLatexNDC(0.15,0.8,TString::Format("Coverage=%.2f%%",afbCoverage[0]*100).Data());
     canvas->Update();
     canvas->Print(TString::Format("%s/coverageAfb_bin%d.pdf",plotpath.Data(),iBin).Data());
 
     h_setSummaryFl->SetTitle("");
     h_setSummaryFl->Draw();
-    //line->DrawLine(flCoverLo, h_setSummaryFl->GetMinimum(), flCoverLo, h_setSummaryFl->GetMaximum());
-    //line->DrawLine(flCoverHi, h_setSummaryFl->GetMinimum(), flCoverHi, h_setSummaryFl->GetMaximum());
-    latex->DrawLatexNDC(0.15,0.8,TString::Format("Coverage=%.2f%%",flCoverage[0]*100));
+    line  ->DrawLine(flCoverLo, h_setSummaryFl->GetMinimum(), flCoverLo, h_setSummaryFl->GetMaximum());
+    line  ->DrawLine(flCoverHi, h_setSummaryFl->GetMinimum(), flCoverHi, h_setSummaryFl->GetMaximum());
+    latex ->DrawLatexNDC(0.15,0.8,TString::Format("Coverage=%.2f%%",flCoverage[0]*100));
     canvas->Update();
     canvas->Print(TString::Format("%s/coverageFl_bin%d.pdf",plotpath.Data(),iBin).Data());
 
     writeParam(iBin, "coverageAfb", afbCoverage, 1);
     writeParam(iBin, "coveragefl" , flCoverage , 1);
 
-    f_summary->Close();
+    f_summary ->Close();
     f_fcresult->Close();
 
     return;
@@ -8749,6 +9019,7 @@ void printHelpMessage(){
     printf("    createFCToys                Create toys for Feldman-Cousins method (Takes a long while!)\n");
     printf("    createBestFitToys           Create toys with best fit point for coverage test (Takes a long while!)\n");
     printf("    FCScan                      Feldman-Cousins method for better error determination under the constraints of physical boundaries.\n");
+    printf("    coverageTest                Coverage test.\n");
     printf("Options     :\n");
     printf("    --help                      Show this help message.\n");
     printf("    --keeplog                   Redirect some messages to odatacardpath/???.log and odatacardpath/???.err.\n");
@@ -9039,14 +9310,13 @@ int main(int argc, char** argv) {
         getchar();
         harvestFCFitResults(whichBin,nToy);
         getFCInterval2(whichBin,nToy);//likelihood ratio ordering
-
-        // Coverage test
-        struct stat fiBuff;
-        if (stat(TString::Format("./limit/bestFit/setSummary_bin%d.root",whichBin),&fiBuff) != 0){
-            harvestToyFitResult(whichBin,2000,"./limit/bestFit");// check "createBestFitToys"
-            rename("./limit/bestFit/setSummary.root",TString::Format("./limit/bestFit/setSummary_bin%d.root",whichBin).Data());
+        fitFCInterval(whichBin);
+    }else if (func == "coverageTest"){
+        for(int iBin=0; iBin<nWorkBins; iBin++){
+            harvestToyFitResult(workBins[iBin],2000,"./limit/bestFit");
+            rename("./limit/bestFit/setSummary.root",TString::Format("./limit/bestFit/setSummary_bin%d.root",workBins[iBin]).Data());
+            getFCResultCoverage2(workBins[iBin]);
         }
-        //getFCResultCoverage2(whichBin);// new definition
     }else if (func == "createToys"){
         scaleFactor = 100;
         
@@ -9068,8 +9338,6 @@ int main(int argc, char** argv) {
         //angular3D_bin(4,"angular3D",scaleFactor);
         //createEdgeEffectToys(4,500);
         //harvestToyFitResult(4,500,"./limit/validation/edgeEffect/yieldsScaleE1/");
-        //harvestToyFitResult(4,500,"./limit/validation/edgeEffect/yieldsScaleE2/");
-        //harvestToyFitResult(4,500,"./limit/validation/edgeEffect/yieldsScaleE3/");
         //angular3D_prior3(10,"angular3D_prior",true);
         //angular3D_bin(10,"angular3D");
     }else{ 
