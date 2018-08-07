@@ -5050,6 +5050,16 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
     double sigRatio_SR   = nsig->getVal()*sigIntSR->getVal()/(nsig->getVal()*sigIntSR->getVal()+nbkgComb->getVal()*bkgIntSR->getVal());
     double sigRatio_SB   = nsig->getVal()*sigIntSB->getVal()/(nsig->getVal()*sigIntSB->getVal()+nbkgComb->getVal()*bkgIntSB->getVal());
 
+    const int nRanges = 3;
+    const double yields = nsig->getVal()+nbkgComb->getVal();
+    const char* rangeTag[nRanges] = {"","_SR","_SB"};
+    int     dataMarkerColor [nRanges] = {1,kBlue,kGreen+2};
+    double  allNormSF       [nRanges]={yields,yields*pdfIntSR->getVal(),yields*pdfIntSB->getVal()};
+    //double  sigNormSF       [nRanges]={nsig->getVal(),nsig->getVal()*sigIntSR->getVal(),nsig->getVal()*sigIntSB->getVal()};
+    //double  bkgNormSF       [nRanges]={nbkgComb->getVal(),nbkgComb->getVal()*bkgIntSR->getVal(),nbkgComb->getVal()*bkgIntSB->getVal()};
+    double  sigNormSF       [nRanges]={1.,sigRatio_SR/sigRatio_full,sigRatio_SB/sigRatio_full};
+    double  bkgNormSF       [nRanges]={1.,(1-sigRatio_SR)/(1-sigRatio_full),(1-sigRatio_SB)/(1-sigRatio_full)};
+
     // Read data
     ch->SetBranchStatus("*",0);
     ch->SetBranchStatus("Bmass"         , 1);
@@ -5073,6 +5083,7 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1]),0);
     RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.18 && Bmass < 5.39"),0);
     RooDataSet *dataSB = new RooDataSet("dataSB","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.39 && Bmass < 5.63"),0);
+    RooDataSet* dataToPrint [nRanges]={data,dataSR,dataSB};
     if (data->sumEntries() == 0){
         return;
     }
@@ -5090,25 +5101,14 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
     t1->SetTextSize(0.04);// default: 0.05
     double fixNDC = 0;
 
-    const int nRanges = 3;
-    const double yields = nsig->getVal()+nbkgComb->getVal();
-    const char* rangeTag[nRanges] = {"","_SR","_SB"};
-    RooDataSet* dataToPrint [nRanges]={data,dataSR,dataSB};
-    int     dataMarkerColor [nRanges] = {1,kBlue,kGreen+2};
-    double  allNormSF       [nRanges]={yields,yields*pdfIntSR->getVal(),yields*pdfIntSB->getVal()};
-    double  sigNormSF       [nRanges]={nsig->getVal(),nsig->getVal()*sigRatio_SR,nsig->getVal()*sigRatio_SB};
-    double  bkgNormSF       [nRanges]={nbkgComb->getVal(),nbkgComb->getVal()*(1-sigRatio_SR),nbkgComb->getVal()*(1-sigRatio_SB)};
-    //double  sigNormSF       [nRanges]={1.,sigRatio_SR/sigRatio_full,sigRatio_SB/sigRatio_full};
-    //double  bkgNormSF       [nRanges]={1.,(1-sigRatio_SR)/(1-sigRatio_full),(1-sigRatio_SB)/(1-sigRatio_full)};
-
     for (int iRange=0; iRange < nRanges; iRange++){
         printf("DEBUG\t\t: sigNormSF=%.3f, bkgNormSF=%.3f\n in %s",sigNormSF[iRange],bkgNormSF[iRange],rangeTag[iRange]);
 
         framemass = Bmass.frame();
         dataToPrint[iRange]->plotOn(framemass,Binning(nMassBins),MarkerColor(dataMarkerColor[iRange]));
-        f->plotOn(framemass,Normalization(allNormSF[iRange],RooAbsReal::NumEvent),LineColor(1));
-        f->plotOn(framemass,Normalization(sigNormSF[iRange],RooAbsReal::NumEvent),Components(*f_sig),LineColor(4),LineWidth(2));
-        f->plotOn(framemass,Normalization(bkgNormSF[iRange],RooAbsReal::NumEvent),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
+        if (iRange==0) f->plotOn(framemass,LineColor(1));
+        f->plotOn(framemass,Normalization(sigNormSF[iRange],RooAbsReal::Relative),Components(*f_sig),LineColor(4),LineWidth(2));
+        f->plotOn(framemass,Normalization(bkgNormSF[iRange],RooAbsReal::Relative),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
 
         framemass->SetTitle("");
         framemass->SetMinimum(0);
@@ -5127,10 +5127,10 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
         // Draw projection to CosThetaK
         framecosk = CosThetaK.frame(); 
         dataToPrint[iRange]->plotOn(framecosk,Binning(nMassBins),MarkerColor(dataMarkerColor[iRange]));
-        f->plotOn(framecosk,Normalization(allNormSF[iRange],RooAbsReal::NumEvent),LineColor(1));
+        if (iRange==0) f->plotOn(framecosk,LineColor(1));
         printf("cosk Chi2/dof = %f/%d\n",framecosk->chiSquare(),nCosThetaKBins);
-        f->plotOn(framecosk,Normalization(sigNormSF[iRange],RooAbsReal::NumEvent),Components(*f_sig),LineColor(4),LineWidth(2));
-        f->plotOn(framecosk,Normalization(bkgNormSF[iRange],RooAbsReal::NumEvent),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
+        f->plotOn(framecosk,Normalization(sigNormSF[iRange],RooAbsReal::Relative),Components(*f_sig),LineColor(4),LineWidth(2));
+        f->plotOn(framecosk,Normalization(bkgNormSF[iRange],RooAbsReal::Relative),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
 
         framecosk->SetTitle("");
         framecosk->SetMinimum(0);
@@ -5148,10 +5148,10 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
         // Draw projection to CosThetaL
         framecosl = CosThetaL.frame(); 
         dataToPrint[iRange]->plotOn(framecosl,Binning(nMassBins),MarkerColor(dataMarkerColor[iRange]));
-        f->plotOn(framecosl,Normalization(allNormSF[iRange],RooAbsReal::NumEvent),LineColor(1));
+        if (iRange==0) f->plotOn(framecosl,LineColor(1));
         printf("cosl Chi2/dof = %f/%d\n",framecosl->chiSquare(),nCosThetaLBins);
-        f->plotOn(framecosl,Normalization(sigNormSF[iRange],RooAbsReal::NumEvent),Components(*f_sig),LineColor(4),LineWidth(2));
-        f->plotOn(framecosl,Normalization(bkgNormSF[iRange],RooAbsReal::NumEvent),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
+        f->plotOn(framecosl,Normalization(sigNormSF[iRange],RooAbsReal::Relative),Components(*f_sig),LineColor(4),LineWidth(2));
+        f->plotOn(framecosl,Normalization(bkgNormSF[iRange],RooAbsReal::Relative),Components(*f_bkgComb),LineColor(2),LineWidth(2),LineStyle(9));
 
         framecosl->SetTitle("");
         framecosl->SetMinimum(0);
@@ -5206,7 +5206,7 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     RooProduct  Bmass_norm("Bmass_norm","Bmass_norm",RooArgSet(Bmass_offset,RooConst(1./0.50)));
 
     int mumuMassWindowBin = 1+2*isCDFcut;
-    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
+    if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut for toys
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1]),0);
     RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.18 && Bmass < 5.39"),0);
     RooDataSet *dataSB = new RooDataSet("dataSB","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.39 && Bmass < 5.63"),0);
@@ -9273,8 +9273,6 @@ int main(int argc, char** argv) {
     // Tags
     is7TeVCheck = false;   
     // less than 0 noCut, 1 for CDF . 2 for LHCb . 3 for 16Aug reOptimization . 4 for sel_v3p5
-    isToy = false;
-    isToy ? isCDFcut*=-1 : isCDFcut=4;
     int nToy=500;
     int nWorkBins = 3;
     int workBins[] = {10,4,9};
@@ -9372,6 +9370,7 @@ int main(int argc, char** argv) {
                 abort();
         }
     }
+    isToy ? isCDFcut*=-1 : isCDFcut=4;// Could be wrong for toy-MC mixture
     printf("INFO\t\t: ScaleFactor for input data is %.3f\n",scaleFactor);
     printf("INFO\t\t: Plots will be stored to %s\n",plotpath.Data());
     printf("INFO\t\t: Datacards will be stored to %s\n",odatacardpath.Data());
@@ -9407,10 +9406,10 @@ int main(int argc, char** argv) {
         ch->Add(infile.Data());
         if (ch == NULL) return 1;
         // TODO: accXrecoEff2 returns all parameters 0 for n>=2.
-        //int nTempWorkBins = 5;
-        //int tempWorkBins[] = {10,4,9,11,12};
         int nTempWorkBins = 1;
         int tempWorkBins[] = {12};
+        //int nTempWorkBins = 5;
+        //int tempWorkBins[] = {10,4,9,11,12};
         for (int iBin = 0; iBin < nTempWorkBins; iBin++) {
             accXrecoEff2(tempWorkBins[iBin],gKeepParam);
         }
@@ -9535,8 +9534,8 @@ int main(int argc, char** argv) {
     }else if (func == "createToys"){
         scaleFactor = 100;
         
-        double expNCombBkg[nQ2Ranges] = { 0 , 0 , 0 , 0 , 61.0 , 0 , 0 , 0 , 0 , 48.7 , 127.5 , 237.1, 59.2};
-        int    expNSig[nQ2Ranges]     = { 0 , 0 , 0 , 0 , 25   , 0 , 0 , 0 , 0 , 40.3   , 23   , 88 , 12};
+        double expNCombBkg[nQ2Ranges] = { 0 , 0 , 0 , 0 , 43.1 , 0 , 0 , 0 , 0 , 43.6 , 98.6 , 177.7, 46.1};
+        int    expNSig[nQ2Ranges]     = { 0 , 0 , 0 , 0 , 25   , 0 , 0 , 0 , 0 , 31    , 22   , 86  , 11};
         for (int iBin = 0; iBin < nWorkBins; iBin++) {
             genToySignal(workBins[iBin],expNSig[workBins[iBin]]*scaleFactor);// (iBin, nEvts)
             genToyCombBkg(workBins[iBin],expNCombBkg[workBins[iBin]]*scaleFactor,"combBkgToy");
@@ -9555,7 +9554,12 @@ int main(int argc, char** argv) {
         //harvestToyFitResult(4,500,"./limit/validation/edgeEffect/yieldsScaleE1/");
         //angular3D_prior4(12,"angular3D_prior",true);
         //angular3D_bin(12,"angular3D");
+        drawAngular3D_bin(10,"angular3D");
+        drawAngular3D_bin(11,"angular3D");
         drawAngular3D_bin(12,"angular3D");
+        drawAngular3D_bin(9,"angular3D");
+        drawAngular3D_bin(4,"angular3D");
+        //splitMCSamples();
     }else{ 
         cerr << "No function available for: " << func.Data() << endl; 
     }
