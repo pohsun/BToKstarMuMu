@@ -103,7 +103,7 @@ double  scaleFactor=1.;
 const int nSummaryBins = 2;
 int summaryBins[nSummaryBins] = {11,12};
 const int nQ2Ranges = 14;
-int plotBin[nQ2Ranges] = {-1,-1,-1, 1, 2, 3,-1,-1,-1, 4, 0, 5, 6, -1};
+int plotBin[nQ2Ranges] = {-1,-1,-1, 1, 2, 3,-1,-1,-1, 4, 0, 6, 5, -1};
 char genQ2range[nQ2Ranges][128] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
                                   "genQ2 < 4.30 && genQ2 > 2.00",
                                   "genQ2 < 8.68 && genQ2 > 4.30",
@@ -199,7 +199,7 @@ double readParam(int iBin, const char parName[], int iColumn, double defVal=0., 
     while(fgets(lineBuff,1024,fp) != NULL ){
         valBuff = strtok(lineBuff," ");
         if ( strcmp(valBuff,parName) == 0 ){
-            printf("INFO: readParam, matched %s!\n",valBuff);
+            //printf("INFO: readParam, matched %s!\n",valBuff);
             valBuff = strtok(NULL," ");
             while(valBuff != NULL){
                 //output.push_back(stof(valBuff));//stof is a c++11 function, use other function
@@ -217,7 +217,7 @@ double readParam(int iBin, const char parName[], int iColumn, double defVal=0., 
     fclose(fp);
     
     if (iColumn < output.size() ){
-        printf("INFO: readParam, get %s[%d]=%e\n",parName,iColumn,output.at(iColumn));
+        //printf("INFO: readParam, get %s[%d]=%e\n",parName,iColumn,output.at(iColumn));
         return output.at(iColumn);
     }else{
         printf("WARNING: readParam, empty column! Return %s[%d]=defVal=%f.\n",parName,iColumn,defVal);
@@ -258,7 +258,7 @@ std::string readParam(int iBin, const char parName[], string defVal="", string f
     while(fgets(lineBuff,1024,fp) != NULL ){
         valBuff = strtok(lineBuff," ");
         if ( strcmp(valBuff,parName) == 0 ){
-            printf("INFO: readParam, matched %s!\n",valBuff);
+            //printf("INFO: readParam, matched %s!\n",valBuff);
             valBuff = strtok(NULL,"\n");
             output=string(valBuff);
             break;
@@ -268,7 +268,7 @@ std::string readParam(int iBin, const char parName[], string defVal="", string f
     fclose(fp);
     
     if (output != ""){
-        printf("INFO: readParam, get %s=%s\n",parName,output.c_str());
+        //printf("INFO: readParam, get %s=%s\n",parName,output.c_str());
         return output;
     }else{
         printf("WARNING: readParam, empty item! Return %s=defVal=%s.\n",parName, defVal.c_str());
@@ -5126,7 +5126,7 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
         
         // Draw projection to CosThetaK
         framecosk = CosThetaK.frame(); 
-        dataToPrint[iRange]->plotOn(framecosk,Binning(nMassBins),MarkerColor(dataMarkerColor[iRange]));
+        dataToPrint[iRange]->plotOn(framecosk,Binning(nCosThetaKBins),MarkerColor(dataMarkerColor[iRange]));
         if (iRange==0) f->plotOn(framecosk,LineColor(1));
         printf("cosk Chi2/dof = %f/%d\n",framecosk->chiSquare(),nCosThetaKBins);
         f->plotOn(framecosk,Normalization(sigNormSF[iRange],RooAbsReal::Relative),Components(*f_sig),LineColor(4),LineWidth(2));
@@ -5147,7 +5147,7 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
 
         // Draw projection to CosThetaL
         framecosl = CosThetaL.frame(); 
-        dataToPrint[iRange]->plotOn(framecosl,Binning(nMassBins),MarkerColor(dataMarkerColor[iRange]));
+        dataToPrint[iRange]->plotOn(framecosl,Binning(nCosThetaLBins),MarkerColor(dataMarkerColor[iRange]));
         if (iRange==0) f->plotOn(framecosl,LineColor(1));
         printf("cosl Chi2/dof = %f/%d\n",framecosl->chiSquare(),nCosThetaLBins);
         f->plotOn(framecosl,Normalization(sigNormSF[iRange],RooAbsReal::Relative),Components(*f_sig),LineColor(4),LineWidth(2));
@@ -6391,6 +6391,7 @@ void harvestToyFitResult(int iBin, int nToy, const char toysDir[])
         for(int iToy = 0; iToy<nToy; iToy++){
             iwspacepath=TString::Format("%s/set%04d",oSummarypath.Data(),iToy+1);
             idatacardpath=TString::Format("%s/set%04d",oSummarypath.Data(),iToy+1);
+            printf("DEBUG\t\t: Collecting datacard from %s\n",idatacardpath.Data());
             double migrad = readParam(iBin,"migrad", 0, -1);
             double fcn    = readParam(iBin,"migrad", 1);
             if (migrad == 0 && fcn > -1e20){
@@ -7060,17 +7061,32 @@ void fitFCInterval(int iBin)
     double intervalRange= 0.3;
     switch(iBin){
         case 10:
-        case 4:
+            flGraphInterval [0] = max( 0.  ,fl -intervalBias-intervalRange);
+            flGraphInterval [1] = min( 1.  ,fl -intervalBias+intervalRange);
+            flGraphInterval [2] = max( 0.  ,0.8);
+            flGraphInterval [3] = min( 1.  ,0.99);
+            afbGraphInterval[0] = max(-0.75,afb-intervalBias-intervalRange);
+            afbGraphInterval[1] = min( 0.75,afb-intervalBias+intervalRange);
+            afbGraphInterval[2] = max(-0.75,afb+intervalBias-intervalRange);
+            afbGraphInterval[3] = min( 0.75,afb+intervalBias+intervalRange);
+            intervalRange=-1;
+            break;
         case 9:
-            intervalBias =0.2;
-            intervalRange=0.3;
+            flGraphInterval [0] = max( 0.  ,fl -intervalBias-intervalRange);
+            flGraphInterval [1] = min( 1.  ,fl -intervalBias+intervalRange);
+            flGraphInterval [2] = max( 0.  ,fl +intervalBias-intervalRange);
+            flGraphInterval [3] = min( 1.  ,fl +intervalBias+intervalRange);
+            afbGraphInterval[0] = max(-0.75,  0.);
+            afbGraphInterval[1] = min( 0.75,  0.4);
+            afbGraphInterval[2] = max(-0.75,  0.2);
+            afbGraphInterval[3] = min( 0.75,  0.6);
+            intervalRange=-1;
             break;
         case 11:
             intervalBias =0.2;
-            intervalRange=0.40;
+            intervalRange=0.4;
             break;
         case 12:
-            intervalRange=-1;
             flGraphInterval [0] = max( 0.  ,0.20);
             flGraphInterval [1] = min( 1.  ,0.60);
             flGraphInterval [2] = max( 0.  ,0.40);
@@ -7079,7 +7095,11 @@ void fitFCInterval(int iBin)
             afbGraphInterval[1] = min( 0.75,-0.20);
             afbGraphInterval[2] = max(-0.75, 0.20);
             afbGraphInterval[3] = min( 0.75, 0.50);
+            intervalRange=-1;
             break;
+        default:
+            intervalBias =0.2;
+            intervalRange=0.3;
     }
     if ( intervalRange > 0){
         flGraphInterval [0] = max( 0.  ,fl -intervalBias-intervalRange);
@@ -7093,10 +7113,10 @@ void fitFCInterval(int iBin)
     }
 
     // Filter interval
-    TH1D   h_bias_flHi ("h_bias_flHi" ,"",200,-1,1);
-    TH1D   h_bias_flLo ("h_bias_flLo" ,"",200,-1,1);
-    TH1D   h_bias_afbHi("h_bias_afbHi","",400,-2,2);
-    TH1D   h_bias_afbLo("h_bias_afbLo","",400,-2,2);
+    TH1D   h_bias_flHi ("h_bias_flHi" ,"",100,-1,1);
+    TH1D   h_bias_flLo ("h_bias_flLo" ,"",100,-1,1);
+    TH1D   h_bias_afbHi("h_bias_afbHi","",200,-2,2);
+    TH1D   h_bias_afbLo("h_bias_afbLo","",200,-2,2);
     for(int iPt=0; iPt<g_ori_flIntervalHi->GetN(); iPt++){
         double trueVal, measVal;
         g_ori_flIntervalHi->GetPoint(iPt, measVal, trueVal);
@@ -7139,16 +7159,21 @@ void fitFCInterval(int iBin)
     TGraph *g_afbIntervalLo     = new TGraph();
     TFitResultPtr ptr_biasFitResult = 0;
     double biasMean, biasError;
-    double nError = iBin == 11 ? 2. : 1.;
+    double nError = 2;
 
-    ptr_biasFitResult = h_bias_flHi.Fit("gaus","SWM","",-1,1);
+    TF1 *f1_bias_gaus = new TF1("f1_bias_gaus","[0]*exp(-0.5*((x-[1])/[2])**2)",-2,2);
+    f1_bias_gaus->SetParLimits(0,0,1e2);
+    f1_bias_gaus->SetParLimits(1,-1.,1.);
+    f1_bias_gaus->SetParLimits(2,0.01,0.5);
+    ptr_biasFitResult = h_bias_flHi.Fit("f1_bias_gaus","SML","", -1,1);
     biasMean = ptr_biasFitResult->GetParams()[1];
     biasError= ptr_biasFitResult->GetParams()[2];
     for(int iPt=0; iPt<g_ori_flIntervalHi->GetN(); iPt++){
         double trueVal, measVal;
         g_ori_flIntervalHi->GetPoint(iPt, measVal, trueVal);
         if ( fabs(measVal) > 1.) continue;
-        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+        if ( fabs(measVal - 0.5) > 0.45 ) continue; // Drop boundary values in fitting
+        if (fabs(measVal-trueVal-biasMean) < nError*biasError){
             g_flIntervalHi->SetPoint(g_flIntervalHi->GetN(),measVal,trueVal);
             if (trueVal>flGraphInterval[0] && trueVal<flGraphInterval[1]){
                 g_fil_flIntervalHi->SetPoint(g_fil_flIntervalHi->GetN(),measVal,trueVal);
@@ -7160,14 +7185,15 @@ void fitFCInterval(int iBin)
             }
         }
     }
-    ptr_biasFitResult = h_bias_flLo.Fit("gaus","SWM","",-1,1);
+    ptr_biasFitResult = h_bias_flLo.Fit("f1_bias_gaus","SML","", -1, 1);
     biasMean = ptr_biasFitResult->GetParams()[1];
     biasError= ptr_biasFitResult->GetParams()[2];
     for(int iPt=0; iPt<g_ori_flIntervalLo->GetN(); iPt++){
         double trueVal, measVal;
         g_ori_flIntervalLo->GetPoint(iPt, measVal, trueVal);
         if ( fabs(measVal) > 1.) continue;
-        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+        if ( fabs(measVal - 0.5) > 0.45 ) continue;
+        if (fabs(measVal-trueVal-biasMean) < nError*biasError){
             g_flIntervalLo->SetPoint(g_flIntervalLo->GetN(),measVal,trueVal);
             if (trueVal>flGraphInterval[2] && trueVal<flGraphInterval[3]){
                 g_fil_flIntervalLo->SetPoint(g_fil_flIntervalLo->GetN(),measVal,trueVal);
@@ -7179,14 +7205,15 @@ void fitFCInterval(int iBin)
             }
         }
     }
-    ptr_biasFitResult = h_bias_afbHi.Fit("gaus","SWM","",-2,2);
+    ptr_biasFitResult = h_bias_afbHi.Fit("f1_bias_gaus","SML","", -2, 2);
     biasMean = ptr_biasFitResult->GetParams()[1];
     biasError= ptr_biasFitResult->GetParams()[2];
     for(int iPt=0; iPt<g_ori_afbIntervalHi->GetN(); iPt++){
         double trueVal, measVal;
         g_ori_afbIntervalHi->GetPoint(iPt, measVal, trueVal);
         if ( fabs(measVal) > 1.) continue;
-        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+        if ( fabs(measVal) > 0.7) continue;
+        if (fabs(measVal-trueVal-biasMean) < nError*biasError){
             g_afbIntervalHi->SetPoint(g_afbIntervalHi->GetN(),measVal,trueVal);
             if (trueVal>afbGraphInterval[0] && trueVal<afbGraphInterval[1] ){
                 g_fil_afbIntervalHi->SetPoint(g_fil_afbIntervalHi->GetN(),measVal,trueVal);
@@ -7198,14 +7225,15 @@ void fitFCInterval(int iBin)
             }
         }
     }
-    ptr_biasFitResult = h_bias_afbLo.Fit("gaus","SWM","",-2,2);
+    ptr_biasFitResult = h_bias_afbLo.Fit("f1_bias_gaus","SML","",-2, 2);
     biasMean = ptr_biasFitResult->GetParams()[1];
     biasError= ptr_biasFitResult->GetParams()[2];
     for(int iPt=0; iPt<g_ori_afbIntervalLo->GetN(); iPt++){
         double trueVal, measVal;
         g_ori_afbIntervalLo->GetPoint(iPt, measVal, trueVal);
         if ( fabs(measVal) > 1.) continue;
-        if (fabs(fabs(trueVal-measVal)-fabs(biasMean)) < nError*biasError){
+        if ( fabs(measVal) > 0.7) continue;
+        if (fabs(measVal-trueVal-biasMean) < nError*biasError){
             g_afbIntervalLo->SetPoint(g_afbIntervalLo->GetN(),measVal,trueVal);
             if (trueVal>afbGraphInterval[2] && trueVal<afbGraphInterval[3] ){
                 g_fil_afbIntervalLo->SetPoint(g_fil_afbIntervalLo->GetN(),measVal,trueVal);
@@ -7217,7 +7245,19 @@ void fitFCInterval(int iBin)
             }
         }
     }
-    printf("ERROR\t\t: %d, %d, %d, %d.\n",g_fil_flIntervalHi->GetN(),g_fil_flIntervalLo->GetN(),g_fil_afbIntervalHi->GetN(),g_fil_afbIntervalLo->GetN());
+    printf("DEBUG\t\t: %d, %d, %d, %d.\n",g_fil_flIntervalHi->GetN(),g_fil_flIntervalLo->GetN(),g_fil_afbIntervalHi->GetN(),g_fil_afbIntervalLo->GetN());
+    h_bias_flHi.Draw();
+    canvas->Update();
+    canvas->Print(TString::Format("%s/f1_bias_flHi_bin%d.pdf",plotpath.Data(),iBin));
+    h_bias_flLo.Draw();
+    canvas->Update();
+    canvas->Print(TString::Format("%s/f1_bias_flLo_bin%d.pdf",plotpath.Data(),iBin));
+    h_bias_afbHi.Draw();
+    canvas->Update();
+    canvas->Print(TString::Format("%s/f1_bias_afbHi_bin%d.pdf",plotpath.Data(),iBin));
+    h_bias_afbLo.Draw();
+    canvas->Update();
+    canvas->Print(TString::Format("%s/f1_bias_afbLo_bin%d.pdf",plotpath.Data(),iBin));
 
     TF1 *f1_fil_flIntervalHi  = new TF1("f1_fil_flIntervalHi",  "[0]+[1]*x", 0.,1.);
     TF1 *f1_fil_flIntervalLo  = new TF1("f1_fil_flIntervalLo",  "[0]+[1]*x", 0.,1.); 
@@ -7295,8 +7335,12 @@ void fitFCInterval(int iBin)
     g_flIntervalHi->GetYaxis()->SetRangeUser(0.,1.);
     g_flIntervalHi->GetXaxis()->SetTitle("Measured F_{L}");
     g_flIntervalHi->GetYaxis()->SetTitle("True F_{L}");
-    g_flIntervalHi->SetMarkerSize(0.8);
-    g_flIntervalLo->SetMarkerSize(0.8);
+    g_flIntervalHi->SetMarkerStyle(7);
+    g_flIntervalLo->SetMarkerStyle(7);
+    g_flIntervalHi->SetMarkerSize(0.4);
+    g_flIntervalLo->SetMarkerSize(0.4);
+    g_flIntervalHi->SetMarkerColor(8);
+    g_flIntervalLo->SetMarkerColor(9);
     g_flIntervalHi->Draw("AP");
     g_flIntervalLo->Draw("P SAME");
     line->SetLineStyle(2);
@@ -7336,8 +7380,12 @@ void fitFCInterval(int iBin)
     g_afbIntervalHi->GetYaxis()->SetRangeUser(-0.75,0.75);
     g_afbIntervalHi->GetXaxis()->SetTitle("Measured A_{FB}");
     g_afbIntervalHi->GetYaxis()->SetTitle("True A_{FB}");
-    g_afbIntervalHi->SetMarkerSize(0.8);
-    g_afbIntervalLo->SetMarkerSize(0.8);
+    g_afbIntervalHi->SetMarkerStyle(7);
+    g_afbIntervalLo->SetMarkerStyle(7); 
+    g_afbIntervalHi->SetMarkerSize(0.4);
+    g_afbIntervalLo->SetMarkerSize(0.4);
+    g_afbIntervalHi->SetMarkerColor(8);
+    g_afbIntervalLo->SetMarkerColor(9);
     g_afbIntervalHi->Draw("AP");
     g_afbIntervalLo->Draw("P SAME");
     line->SetLineStyle(2);
@@ -7954,6 +8002,8 @@ void genToyCombBkgFromWspace(int iBin, int nEvents)
     double Q2((q2rangeup[iBin]+q2rangedn[iBin])/2);
     if (iBin == summaryBins[0]){
         Q2 = 2.;// Pick whatever value away from cuts.
+    }else if (iBin == 4){
+        Q2 = 11.;// Pick whatever value away from cuts.
     }
     double mumuMass(sqrt(Q2));
     double mumuMasserr(0.01);
@@ -7978,6 +8028,10 @@ void genToyCombBkgFromWspace(int iBin, int nEvents)
         rndBmass=((RooRealVar*)dataInEntry->find("Bmass"    ))->getVal();
         rndCosK =((RooRealVar*)dataInEntry->find("CosThetaK"))->getVal();
         rndCosL =((RooRealVar*)dataInEntry->find("CosThetaL"))->getVal();
+        if (iBin==4){
+            mumuMass=rndBmass-2.02;// Allowed region, 1.594~2.04 and 2.004~2.453
+            Q2=pow(mumuMass,2);
+        }
         tree->Fill();
     }
     fout.Write();
@@ -9519,9 +9573,9 @@ int main(int argc, char** argv) {
 
         printf("INFO\t\t: Press Enter to start scanning confidence interval for bin%d\n",whichBin);
         getchar();
-        //harvestFCFitResults(whichBin,nToy);
+        harvestFCFitResults(whichBin,nToy);
         //getFCInterval2(whichBin,nToy);//likelihood ratio ordering
-        fitFCInterval(whichBin);
+        //fitFCInterval(whichBin);
     }else if (func == "coverageTest"){
         for(int iBin=0; iBin<nWorkBins; iBin++){
             //harvestToyFitResult(workBins[iBin],2000,"./limit/bestFit");
@@ -9554,11 +9608,11 @@ int main(int argc, char** argv) {
         //harvestToyFitResult(4,500,"./limit/validation/edgeEffect/yieldsScaleE1/");
         //angular3D_prior4(12,"angular3D_prior",true);
         //angular3D_bin(12,"angular3D");
-        drawAngular3D_bin(10,"angular3D");
-        drawAngular3D_bin(11,"angular3D");
-        drawAngular3D_bin(12,"angular3D");
-        drawAngular3D_bin(9,"angular3D");
-        drawAngular3D_bin(4,"angular3D");
+        //drawAngular3D_bin(10,"angular3D");
+        //drawAngular3D_bin( 4,"angular3D");
+        //drawAngular3D_bin( 9,"angular3D");
+        //drawAngular3D_bin(11,"angular3D");
+        //drawAngular3D_bin(12,"angular3D");
         //splitMCSamples();
     }else{ 
         cerr << "No function available for: " << func.Data() << endl; 
