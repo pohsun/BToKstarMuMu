@@ -4491,7 +4491,7 @@ void angular3D_prior3(int iBin, const char outfile[] = "angular3D_prior", bool k
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0 ) mumuMassWindowBin = 0;
     RooDataSet *dataM = new RooDataSet("dataM","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[2]),0);
-    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) && (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
+    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) || (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
     RooDataSet *dataALo = new RooDataSet("dataALo","dataALo",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[1]),0);
     RooDataSet *dataAUp = new RooDataSet("dataAUp","dataAUp",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[2]),0);
     if (dataM->sumEntries() == 0 || dataAUp->sumEntries() == 0){
@@ -4722,7 +4722,7 @@ void angular3D_prior4(int iBin, const char outfile[] = "angular3D_prior", bool k
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0 ) mumuMassWindowBin = 0;
     RooDataSet *dataM = new RooDataSet("dataM","dataM SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[2]),0);
-    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) && (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
+    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) || (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
     if (dataM->sumEntries() == 0 || dataA->sumEntries() == 0){
         printf("ERROR   : Total number of entries is 0. Exit!\n");
         return;
