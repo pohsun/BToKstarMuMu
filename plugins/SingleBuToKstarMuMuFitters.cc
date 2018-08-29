@@ -101,10 +101,10 @@ TString ologpath=".";
 double  scaleFactor=1.;
 //Constants, Fit results for efficiency, etc.. //{{{
 const int nSummaryBins = 2;
-int summaryBins[nSummaryBins] = {11,12};
+const int summaryBins[nSummaryBins] = {11,12};
 const int nQ2Ranges = 14;
-int plotBin[nQ2Ranges] = {-1,-1,-1, 1, 2, 3,-1,-1,-1, 4, 0, 6, 5, -1};
-char genQ2range[nQ2Ranges][128] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
+const int plotBin[nQ2Ranges] = {-1,-1,-1, 1, 2, 3,-1,-1,-1, 4, 0, 6, 5, -1};
+const char genQ2range[nQ2Ranges][128] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
                                   "genQ2 < 4.30 && genQ2 > 2.00",
                                   "genQ2 < 8.68 && genQ2 > 4.30",
                                   "genQ2 <10.09 && genQ2 > 8.68",//Jpsi
@@ -118,7 +118,7 @@ char genQ2range[nQ2Ranges][128] = {"genQ2 < 2.00 && genQ2 > 1.00",//0
                                   "(genQ2 <8.68 && genQ2 > 1.00) || (genQ2 > 10.09 && genQ2 < 12.86) || (genQ2 >14.18 && genQ2 <19.00)",
                                   "genQ2 < 6.00 && genQ2 > 1.00",
                                   "genQ2 < 8.68 && genQ2 > 6.00"};
-char q2range[nQ2Ranges][128] = {"Q2 < 2.00 && Q2 > 1.00",
+const char q2range[nQ2Ranges][128] = {"Q2 < 2.00 && Q2 > 1.00",
                                 "Q2 < 4.30 && Q2 > 2.00",
                                 "Q2 < 8.68 && Q2 > 4.30",
                                 "Q2 <10.09 && Q2 > 8.68",//3,Jpsi
@@ -132,7 +132,7 @@ char q2range[nQ2Ranges][128] = {"Q2 < 2.00 && Q2 > 1.00",
                                 "(Q2 <8.68 && Q2 > 1.00) || (Q2 > 10.09 && Q2 < 12.86) || (Q2 >14.18 && Q2 <19.00)",
                                 "Q2 < 6.00 && Q2 > 1.00",
                                 "Q2 < 8.68 && Q2 > 6.00"};
-char q2rangeLatex[nQ2Ranges][32] = {" 1.00 < q^{2} < 2.00",
+const char q2rangeLatex[nQ2Ranges][32] = {" 1.00 < q^{2} < 2.00",
                                     " 2.00 < q^{2} < 4.30",
                                     " 4.30 < q^{2} < 8.68",
                                     " 8.68 < q^{2} <10.09",//3,Jpsi
@@ -146,10 +146,10 @@ char q2rangeLatex[nQ2Ranges][32] = {" 1.00 < q^{2} < 2.00",
                                     " 1.00 < q^{2} <19.00",
                                     " 1.00 < q^{2} < 6.00",
                                     " 6.00 < q^{2} < 8.68"};
-double q2rangedn[nQ2Ranges] = {1.00 , 2.00 , 4.30 , 8.68  , 10.09 , 12.86 , 14.18 , 16.00 , 1.00 , 14.18 , 1.00 ,  1.00 , 1.00, 6.00};
-double q2rangeup[nQ2Ranges] = {2.00 , 4.30 , 8.68 , 10.09 , 12.86 , 14.18 , 16.00 , 19.00 , 4.30 , 19.00 , 8.68 , 19.00 , 6.00, 8.68};
-char nTriggeredPath[3][32] = {"Triggers == 0", "Triggers == 1", "Triggers >= 1"};
-char mumuMassWindow[11][512] = {"Mumumass > 0",
+const double q2rangedn[nQ2Ranges] = {1.00 , 2.00 , 4.30 , 8.68  , 10.09 , 12.86 , 14.18 , 16.00 , 1.00 , 14.18 , 1.00 ,  1.00 , 1.00, 6.00};
+const double q2rangeup[nQ2Ranges] = {2.00 , 4.30 , 8.68 , 10.09 , 12.86 , 14.18 , 16.00 , 19.00 , 4.30 , 19.00 , 8.68 , 19.00 , 6.00, 8.68};
+const char nTriggeredPath[3][32] = {"Triggers == 0", "Triggers == 1", "Triggers >= 1"};
+const char mumuMassWindow[11][512] = {"Mumumass > 0",
                                 "(Mumumass > 3.096916+3.5*Mumumasserr || Mumumass < 3.096916-5.5*Mumumasserr) && (Mumumass > 3.686109+3.5*Mumumasserr || Mumumass < 3.686109-3.5*Mumumasserr)",
                                 "(Mumumass < 3.096916+3*Mumumasserr && Mumumass > 3.096916-5*Mumumasserr) || (Mumumass < 3.686109+3*Mumumasserr && Mumumass > 3.686109-3*Mumumasserr)",
                                 "(Mumumass*Mumumass<8.68 && Bmass-Mumumass>2.182+0.16 && Bmass-Mumumass<2.182-0.16) || (Mumumass*Mumumass>10.09 && Mumumass*Mumumass<12.86 && Bmass-Mumumass>1.593+0.06 && Bmass-Mumumass<1.593-0.06) || (Mumumass*Mumumass>14.18 && Bmass-Mumumass>1.593+0.06 && Bmass-Mumumass<1.593-0.06)",
@@ -161,15 +161,25 @@ char mumuMassWindow[11][512] = {"Mumumass > 0",
                                 "abs(Bmass-Mumumass-2.182)>0.09 && abs(Bmass-Mumumass-1.593)>0.03",
                                 "abs(Bmass-Mumumass-2.182)<0.09 || abs(Bmass-Mumumass-1.593)<0.03",
 };//None, sig, bkg, #Jpsi, #Psi2S, CDF, anti-CDF, LHCb, anti-LHCb, 16Aug reOptimization, anti-16Aug-reOptimization, sel_v3p5, anti-sel_v3p5
-char kstarMassWindow[4][128] = {    "Kstarmass > 0",
+const char kstarMassWindow[4][128] = {    "Kstarmass > 0",
                                     "Kstarmass > 0.792 && Kstarmass < 0.992",
                                     "(Kstarmass > 0 && Kstarmass < 0.792) || Kstarmass > 0.992",
                                     "(Kstarmass > 0 && Kstarmass < 0.742) || Kstarmass > 1.042" //alternative sidebands
 };//None, sig, sideband
-double genAfb   [nQ2Ranges]={-0.160   , -0.066   , 0.182    , 0.317    , 0.374    , 0.412    , 0.421    , 0.376    , -0.098   , 0.398    , 0.069    , 0.231 , -0.036    ,-0.036};
-double genAfberr[nQ2Ranges]={0.000434 , 0.000285 , 0.000223 , 0.000383 , 0.000277 , 0.000421 , 0.000395 , 0.000422 , 0.000333 , 0.000146 , 0.000172, 0.000136, 0.000279 ,0.00279};
-double genFl    [nQ2Ranges]={0.705    , 0.791    , 0.649    , 0.524    , 0.454    , 0.399    , 0.369    , 0.341    , 0.7620   , 0.355    , 0.694    , 0.544 , 0.748     ,0.748};
-double genFlerr [nQ2Ranges]={0.000568 , 0.000409 , 0.000271 , 0.000420 , 0.000287 , 0.000415 , 0.000369 , 0.000361 , 0.000240 , 0.000132 , 0.000258, 0.000144, 0.000206 ,0.000208};
+const double brangedn[6] = {5.18,4.68,5.63,5.18,5.39,5.39};
+const double brangeup[6] = {5.63,5.18,6.13,5.39,5.39,5.63};
+const char bMassWindow[6][128] = {
+    "Bmass < 5.63 && Bmass > 5.18",
+    "Bmass < 5.18 && Bmass > 4.68",
+    "Bmass < 6.13 && Bmass > 5.63",
+    "Bmass < 5.39 && Bmass > 5.18",
+    "Bmass < 5.39 && Bmass > 5.39",
+    "Bmass < 5.63 && Bmass > 5.39"
+};// Fill Signal region, Lower sideband, Upper sideband, Signal peaking region, Signal lower shoulder, Signal upper shoulder
+const double genAfb   [nQ2Ranges]={-0.160   , -0.066   , 0.182    , 0.317    , 0.374    , 0.412    , 0.421    , 0.376    , -0.098   , 0.398    , 0.069    , 0.231 , -0.036    ,-0.036};
+const double genAfberr[nQ2Ranges]={0.000434 , 0.000285 , 0.000223 , 0.000383 , 0.000277 , 0.000421 , 0.000395 , 0.000422 , 0.000333 , 0.000146 , 0.000172, 0.000136, 0.000279 ,0.00279};
+const double genFl    [nQ2Ranges]={0.705    , 0.791    , 0.649    , 0.524    , 0.454    , 0.399    , 0.369    , 0.341    , 0.7620   , 0.355    , 0.694    , 0.544 , 0.748     ,0.748};
+const double genFlerr [nQ2Ranges]={0.000568 , 0.000409 , 0.000271 , 0.000420 , 0.000287 , 0.000415 , 0.000369 , 0.000361 , 0.000240 , 0.000132 , 0.000258, 0.000144, 0.000206 ,0.000208};
 // Lumi = Nreco/(cross section*branch factor*filter efficiency), cross section is 49.59e9 [pb] for 8TeV and 48.44e9 [pb] for 7TeV.
 // BF_BuToK*MuMu = 1.07E-6, 1.12E-6(2014)
 // BF_BuToK*Jpsi = 1.43E-3, 1.44E-3(2014)
@@ -179,7 +189,7 @@ double genFlerr [nQ2Ranges]={0.000568 , 0.000409 , 0.000271 , 0.000420 , 0.00028
 // BF_K*ToK0Pi  = 2/3  (K* decays to Kpi)
 // BF_K0ToKs  = 1/2
 // BF_KsToPiPi = 2/3
-double datasetLumi[5] = {19.98,37378.629,295.761,218.472,9.81};//data, BuToKstarMuMu(16281.440+21097.189), BuToKstarJpsi(118.201+177.560), BuToKstarPsi2S(63.103,155.369), JpsiX
+const double datasetLumi[5] = {19.98,37378.629,295.761,218.472,9.81};//data, BuToKstarMuMu(16281.440+21097.189), BuToKstarJpsi(118.201+177.560), BuToKstarPsi2S(63.103,155.369), JpsiX
 //}}}
 
 double readParam(int iBin, const char parName[], int iColumn, double defVal=0., double forceReturn=999.)
@@ -1925,6 +1935,7 @@ std::string accXrecoEff2(int iBin, bool keepParam = false) // acceptance*reconst
     h_nrecoK.SetYTitle("#Events/0.2");
     for (int entry = 0; entry < ch->GetEntries(); entry++) {
         ch->GetEntry(entry);
+        if (BMass < brangedn[0] || BMass > brangeup[0]) continue;//Focus on SR
         if (gQ2 > q2rangeup[3] && gQ2 < q2rangedn[3]) continue;//jpsi
         if (gQ2 > q2rangeup[5] && gQ2 < q2rangedn[5]) continue;//psi2s
         if (gQ2 > q2rangeup[iBin] || gQ2 < q2rangedn[iBin]) continue;
@@ -2599,7 +2610,7 @@ void angular2D_bin(int iBin, const char outfile[] = "angular2D")
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.18,5.63);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",brangedn[0],brangeup[0]);
     RooRealVar CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -2898,7 +2909,7 @@ void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool ke
     ch->SetBranchStatus("Kstarmass"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",4.5,6.5);
+    RooRealVar Bmass("Bmass","M_{K^{*}#Mu#Mu}",4.50, 6.5);
     RooRealVar Q2("Q2","q^{2}",0.5,20.);
     RooRealVar Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
     RooRealVar Mumumasserr("Mumumasserr","Error of M^{#mu#mu}",0.,10.);
@@ -2926,7 +2937,7 @@ void angular3D_1a_Sm(int iBin, const char outfile[] = "angular3D_1a_Sm", bool ke
     if (iBin==3 || iBin==5) mumuMassWindowBin = 2+2*isCDFcut;
     if (isCDFcut < 0) mumuMassWindowBin =0;
     RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, Mumumass, Mumumasserr, Kstarmass,Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)", nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin], kstarMassWindow[1]),0);
-    RooFitResult *f_fitresult = f.fitTo(*data,Extended(kTRUE),Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE),Range(5.18,5.63));
+    RooFitResult *f_fitresult = f.fitTo(*data,Extended(kTRUE),Save(kTRUE),Minimizer("Minuit"),Minos(kTRUE),Range(brangedn[0],brangeup[0]));
 
     // Draw the frame on the canvas
     TCanvas* c = new TCanvas("c");
@@ -4480,9 +4491,9 @@ void angular3D_prior3(int iBin, const char outfile[] = "angular3D_prior", bool k
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0 ) mumuMassWindowBin = 0;
     RooDataSet *dataM = new RooDataSet("dataM","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[2]),0);
-    RooDataSet *dataA = new RooDataSet("dataA","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.6 || ( Bmass < 5.0 && Bmass > 4.5 )"),0);
-    RooDataSet *dataAUp = new RooDataSet("dataAUp","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.6"),0);
-    RooDataSet *dataALo = new RooDataSet("dataALo","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass < 5.0 && Bmass > 4.5"),0);
+    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) && (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
+    RooDataSet *dataALo = new RooDataSet("dataALo","dataALo",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[1]),0);
+    RooDataSet *dataAUp = new RooDataSet("dataAUp","dataAUp",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[2]),0);
     if (dataM->sumEntries() == 0 || dataAUp->sumEntries() == 0){
         printf("ERROR   : Total number of entries is 0. Exit!\n");
         return;
@@ -4661,12 +4672,7 @@ void angular3D_prior3(int iBin, const char outfile[] = "angular3D_prior", bool k
     
     if (keepParam){
         RooWorkspace *wspace = new RooWorkspace("wspace","wspace");
-        //Bmass.setRange(5.1,5.6);
-        Bmass.setRange(5.18,5.63);
-        //Bmass.setRange(5.6,6.5);
-        //Bmass.setRange(4.5,5.0);
-        //wspace->import(f_bkgCombA);
-        //wspace->import(f_bkgCombM);
+        Bmass.setRange(brangedn[0],brangeup[0]);
         wspace->import(*f);
         wspace->Print();
 
@@ -4716,7 +4722,7 @@ void angular3D_prior4(int iBin, const char outfile[] = "angular3D_prior", bool k
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0 ) mumuMassWindowBin = 0;
     RooDataSet *dataM = new RooDataSet("dataM","dataM SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[2]),0);
-    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"(Bmass > 5.63 && Bmass < 6.13)|| ( Bmass < 5.18 && Bmass > 4.68 )"),0);
+    RooDataSet *dataA = new RooDataSet("dataA","dataA SB",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],TString::Format("(%s) && (%s)",bMassWindow[1],bMassWindow[2]).Data()),0);
     if (dataM->sumEntries() == 0 || dataA->sumEntries() == 0){
         printf("ERROR   : Total number of entries is 0. Exit!\n");
         return;
@@ -5022,6 +5028,7 @@ void angular3D_prior4(int iBin, const char outfile[] = "angular3D_prior", bool k
     delete dataM;
 }//}}}
 
+// TODO
 void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
 {//{{{
     printf("INFO\t\t: Processing angular3D_bin(iBin=%d)\n",iBin);
@@ -5037,28 +5044,31 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
     RooRealVar *afb         =ws->var("afb");
     RooRealVar *fl          =ws->var("fl");
     RooRealVar Bmass        =*(ws->var("Bmass"));
-    Bmass.setRange("SB",5.39,5.63);
-    Bmass.setRange("SR",5.18,5.39);
+    Bmass.setRange("SR" ,brangedn[3],brangeup[3]);
+    Bmass.setRange("LSB",brangedn[4],brangeup[4]);
+    Bmass.setRange("USB",brangedn[5],brangeup[5]);
 
     RooAbsReal *pdfIntSR = f        ->createIntegral(Bmass,NormSet(Bmass),Range("SR"));
     RooAbsReal *sigIntSR = f_sig    ->createIntegral(Bmass,NormSet(Bmass),Range("SR"));
     RooAbsReal *bkgIntSR = f_bkgComb->createIntegral(Bmass,NormSet(Bmass),Range("SR"));
-    RooAbsReal *pdfIntSB = f        ->createIntegral(Bmass,NormSet(Bmass),Range("SB"));
-    RooAbsReal *sigIntSB = f_sig    ->createIntegral(Bmass,NormSet(Bmass),Range("SB"));
-    RooAbsReal *bkgIntSB = f_bkgComb->createIntegral(Bmass,NormSet(Bmass),Range("SB"));
+    RooAbsReal *pdfIntLSB= f        ->createIntegral(Bmass,NormSet(Bmass),Range("LSB"));
+    RooAbsReal *sigIntLSB= f_sig    ->createIntegral(Bmass,NormSet(Bmass),Range("LSB"));
+    RooAbsReal *bkgIntLSB= f_bkgComb->createIntegral(Bmass,NormSet(Bmass),Range("LSB"));
+    RooAbsReal *pdfIntUSB= f        ->createIntegral(Bmass,NormSet(Bmass),Range("USB"));
+    RooAbsReal *sigIntUSB= f_sig    ->createIntegral(Bmass,NormSet(Bmass),Range("USB"));
+    RooAbsReal *bkgIntUSB= f_bkgComb->createIntegral(Bmass,NormSet(Bmass),Range("USB"));
     double sigRatio_full = nsig->getVal()/(nsig->getVal()+nbkgComb->getVal());
     double sigRatio_SR   = nsig->getVal()*sigIntSR->getVal()/(nsig->getVal()*sigIntSR->getVal()+nbkgComb->getVal()*bkgIntSR->getVal());
-    double sigRatio_SB   = nsig->getVal()*sigIntSB->getVal()/(nsig->getVal()*sigIntSB->getVal()+nbkgComb->getVal()*bkgIntSB->getVal());
+    double sigRatio_LSB  = nsig->getVal()*sigIntLSB->getVal()/(nsig->getVal()*sigIntLSB->getVal()+nbkgComb->getVal()*bkgIntLSB->getVal());
+    double sigRatio_USB  = nsig->getVal()*sigIntUSB->getVal()/(nsig->getVal()*sigIntUSB->getVal()+nbkgComb->getVal()*bkgIntUSB->getVal());
 
-    const int nRanges = 3;
+    const int nRanges = 4;
     const double yields = nsig->getVal()+nbkgComb->getVal();
-    const char* rangeTag[nRanges] = {"","_SR","_SB"};
-    int     dataMarkerColor [nRanges] = {1,kBlue,kGreen+2};
-    double  allNormSF       [nRanges]={yields,yields*pdfIntSR->getVal(),yields*pdfIntSB->getVal()};
-    //double  sigNormSF       [nRanges]={nsig->getVal(),nsig->getVal()*sigIntSR->getVal(),nsig->getVal()*sigIntSB->getVal()};
-    //double  bkgNormSF       [nRanges]={nbkgComb->getVal(),nbkgComb->getVal()*bkgIntSR->getVal(),nbkgComb->getVal()*bkgIntSB->getVal()};
-    double  sigNormSF       [nRanges]={1.,sigRatio_SR/sigRatio_full,sigRatio_SB/sigRatio_full};
-    double  bkgNormSF       [nRanges]={1.,(1-sigRatio_SR)/(1-sigRatio_full),(1-sigRatio_SB)/(1-sigRatio_full)};
+    const char* rangeTag[nRanges] = {"","_SR","_LSB","_USB"};
+    int     dataMarkerColor [nRanges] = {1,kBlue,kGreen+2,kGreen+2};
+    double  allNormSF       [nRanges]={yields,yields*pdfIntSR->getVal(),yields*pdfIntLSB->getVal(),yields*pdfIntUSB->getVal()};
+    double  sigNormSF       [nRanges]={1.,sigRatio_SR/sigRatio_full,sigRatio_LSB/sigRatio_full,sigRatio_USB/sigRatio_full};
+    double  bkgNormSF       [nRanges]={1.,(1-sigRatio_SR)/(1-sigRatio_full),(1-sigRatio_LSB)/(1-sigRatio_full),(1-sigRatio_USB)/(1-sigRatio_full)};
 
     // Read data
     ch->SetBranchStatus("*",0);
@@ -5069,7 +5079,6 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    //RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.18,5.63);
     RooRealVar  CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar  CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar  Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -5080,10 +5089,11 @@ void drawAngular3D_bin(int iBin, const char outfile[] = "angular3D")
 
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1]),0);
-    RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.18 && Bmass < 5.39"),0);
-    RooDataSet *dataSB = new RooDataSet("dataSB","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.39 && Bmass < 5.63"),0);
-    RooDataSet* dataToPrint [nRanges]={data,dataSR,dataSB};
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[0]),0);
+    RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[3]),0);
+    RooDataSet *dataLSB = new RooDataSet("dataLSB","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[4]),0);
+    RooDataSet *dataUSB = new RooDataSet("dataUSB","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[5]),0);
+    RooDataSet* dataToPrint [nRanges]={data,dataSR,dataLSB,dataUSB};
     if (data->sumEntries() == 0){
         return;
     }
@@ -5191,10 +5201,7 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     ch->SetBranchStatus("CosTheta*"     , 1);
     ch->SetBranchStatus("Q2"            , 1);
     ch->SetBranchStatus("Triggers"      , 1);
-    //RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.1,5.6);
-    RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.18,5.63);
-    //RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",5.6,6.5);//dataAUp
-    //RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",4.5,5.0);//dataALo
+    RooRealVar  Bmass("Bmass","M_{K^{*}#Mu#Mu}",brangedn[0],brangeup[0]);
     RooRealVar  CosThetaK("CosThetaK"     , "cos#theta_{K}"       , -1. , 1.   ) ;
     RooRealVar  CosThetaL("CosThetaL"     , "cos#theta_{L}"       , -1. , 1.   ) ;
     RooRealVar  Mumumass("Mumumass","M^{#mu#mu}",0.,10.);
@@ -5207,11 +5214,10 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
 
     int mumuMassWindowBin = 1+2*isCDFcut;
     if (iBin==3 || iBin==5 || isCDFcut < 0) mumuMassWindowBin = 0; // no cut for toys
-    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1]),0);
-    RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.18 && Bmass < 5.39"),0);
-    RooDataSet *dataSB = new RooDataSet("dataSB","data",ch,RooArgSet(CosThetaK, CosThetaL, Bmass, Q2, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2], q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.39 && Bmass < 5.63"),0);
-    //RooDataSet *data = new RooDataSet("data","dataAUp",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass > 5.6"),0);
-    //RooDataSet *data = new RooDataSet("data","dataALo",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],"Bmass < 5.0 && Bmass > 4.5"),0);
+    RooDataSet *data = new RooDataSet("data","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[0]),0);
+    RooDataSet *dataSR = new RooDataSet("dataSR","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[3]),0);
+    RooDataSet *dataLSB = new RooDataSet("dataLSB","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[4]),0);
+    RooDataSet *dataUSB = new RooDataSet("dataUSB","data",ch,RooArgSet(Q2, Bmass, CosThetaK, CosThetaL, Mumumass, Mumumasserr, Kstarmass, Triggers),TString::Format("(%s) && (%s) && (%s) && (%s) && (%s)",nTriggeredPath[2],q2range[iBin],mumuMassWindow[mumuMassWindowBin],kstarMassWindow[1],bMassWindow[5]),0);
     if (data->sumEntries() == 0){
         return;
     }
@@ -5501,8 +5507,6 @@ void angular3D_bin(int iBin, const char outfile[] = "angular3D", double dataScal
     
     // Pro-Fit procedure
     printf("\nINFO\t\t: Enter Pre-fit loop.\n\n");
-    //frac_bkgCombA_UpLo->setVal(1.);// 1: pure upper
-    //frac_bkgCombA_UpLo->setConstant(kTRUE);
     fM  ->fitTo(*data,Extended(kTRUE),Hesse(kFALSE),ExternalConstraints(gausConstraints));
     nsig    .setConstant(kTRUE);
     nbkgComb.setConstant(kTRUE);
